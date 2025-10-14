@@ -70,12 +70,15 @@ if not os.path.exists(config_path):
 with open('config.yaml', encoding='utf-8') as file:
     config = yaml.load(file, Loader=SafeLoader)
 
-# Hash passwords using the correct syntax for newer versions
-hashed_passwords = Hasher.hash_passwords(["elnagh", "abc_fin_cba", "123"])
+# Hash passwords manually using bcrypt
+import bcrypt
 
-config['credentials']['usernames']['admin']['password'] = hashed_passwords[0]
-config['credentials']['usernames']['fin.analyst']['password'] = hashed_passwords[1]
-config['credentials']['usernames']['h.khandani']['password'] = hashed_passwords[2]
+def hash_password(password):
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+config['credentials']['usernames']['admin']['password'] = hash_password("elnagh")
+config['credentials']['usernames']['fin.analyst']['password'] = hash_password("abc_fin_cba")
+config['credentials']['usernames']['h.khandani']['password'] = hash_password("123")
 
 authenticator = stauth.Authenticate(
     config['credentials'],
@@ -1198,4 +1201,3 @@ if st.session_state.authentication_status:
 
     if __name__ == "__main__":
         main()
-
