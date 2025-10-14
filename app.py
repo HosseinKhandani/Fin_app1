@@ -1,13 +1,4 @@
-# ==================== DOWNLOAD SECTION ====================
-                    st.markdown("""
-                    <hr style="margin: 3rem 0; border: none; height: 2px; background: linear-gradient(90deg, transparent, #667eea, transparent);">
-                    """, unsafe_allow_html=True)
-                    
-                    st.markdown("""
-                    <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📥 دانلود نتایج</h3>
-                    """, unsafe_allow_html=True)
-                    
-                    def flatten_reference_data(df):
+def flatten_reference_data(df):
                         """تابع برای تبدیل ستون ارجاع به ستون‌های جداگانه"""
                         if 'ارجاع' in df.columns:
                             df['شماره_بند'] = df['ارجاع'].apply(
@@ -1467,10 +1458,15 @@ if st.session_state.get('authentication_status'):
                             <div class="metric-value">{success_rate:.0f}%</div>
                             <div class="metric-label">نرخ موفقیت</div>
                         </div>
-                        """, unsafe_allow_html=True)
+                                                        """, unsafe_allow_html=True)
+                    
+                    # ==================== DOWNLOAD SECTION ====================
+                    st.markdown("""
+                    <hr style="margin: 3rem 0; border: none; height: 2px; background: linear-gradient(90deg, transparent, #667eea, transparent);">
+                    """, unsafe_allow_html=True)
                     
                     st.markdown("""
-                    <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📋 جزئیات نتایج</h3>
+                    <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📥 دانلود نتایج</h3>
                     """, unsafe_allow_html=True)
                     
                     for filename, result in results:
