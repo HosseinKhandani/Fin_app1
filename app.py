@@ -18,6 +18,7 @@ import re
 from typing import List, Dict, Any, Tuple
 import base64
 from io import BytesIO
+import openpyxl
 
 # Page configuration
 st.set_page_config(
@@ -591,6 +592,14 @@ if st.session_state.get('authentication_status'):
             background: linear-gradient(135deg, #ffcdd2 0%, #ef5350 100%);
         }
         
+        .risk-card .info-label {
+            color: #2c3e50 !important;
+        }
+        
+        .risk-card .info-value {
+            color: #2c3e50 !important;
+        }
+        
         .nav-helper {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -1121,8 +1130,8 @@ if st.session_state.get('authentication_status'):
                                             <div class="info-value">{opinion_type}</div>
                                         </div>
                                         <div class="risk-card {risk_card_class}">
-                                            <div class="info-label" style="color: {border_color};">🎯 سطح ریسک</div>
-                                            <div class="info-value" style="color: {border_color}; font-size: 1.5rem;">{risk_icon} {risk_level}</div>
+                                            <div class="info-label">🎯 سطح ریسک</div>
+                                            <div class="info-value" style="font-size: 1.5rem;">{risk_icon} {risk_level}</div>
                                         </div>
                                     </div>
                                 </div>
