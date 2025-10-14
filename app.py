@@ -53,7 +53,7 @@ if not os.path.exists(config_path):
                 },
                 'h.khandani': {
                     'email': 'khandani@example.com',
-                    'name': 'مدیر',
+                    'name': 'حسام خندانی',
                     'password': 'placeholder'
                 }
             }
@@ -1198,3 +1198,4 @@ if st.session_state.authentication_status:
 
     if __name__ == "__main__":
         main()
+
