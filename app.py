@@ -31,7 +31,11 @@ proxy_url = "http://185.173.168.31:22525"
 os.environ['HTTP_PROXY'] = proxy_url
 os.environ['HTTPS_PROXY'] = proxy_url
 
-api_keys = []
+api_keys = [
+    "AIzaSyAo5oFZqsTRkUIqJRjoefWINWpbwPHbEn8",
+    "AIzaSyBeLYGH4JS-fPHYdqKgUPotV2dpGZYZ2to",
+    "AIzaSyDyj1DlOLAlbKzTLFP2tz95TcIca4oV0Vg"
+]
 
 # ==================== AUTHENTICATION CODE START ====================
 
@@ -1072,3 +1076,4 @@ if st.session_state.get('authentication_status'):
 
     if __name__ == "__main__":
         main()
+
