@@ -91,21 +91,38 @@ if 'authentication_status' not in st.session_state:
     st.session_state.authentication_status = None
 
 if st.session_state.authentication_status is None:
-    name, authentication_status, username = authenticator.login(location='main')
-    st.session_state.authentication_status = authentication_status
-    st.session_state.name = name
-    st.session_state.username = username
+    try:
+        # Try newer version syntax
+        authenticator.login()
+        
+        # Check if authentication happened
+        if st.session_state.get("authentication_status"):
+            st.session_state.name = st.session_state.get("name")
+            st.session_state.username = st.session_state.get("username")
+    except TypeError:
+        # Fallback for older version
+        try:
+            name, authentication_status, username = authenticator.login('main')
+            st.session_state.authentication_status = authentication_status
+            st.session_state.name = name
+            st.session_state.username = username
+        except:
+            result = authenticator.login()
+            if result:
+                st.session_state.name = result[0]
+                st.session_state.authentication_status = result[1]
+                st.session_state.username = result[2]
 
-if st.session_state.authentication_status == False:
+if st.session_state.get('authentication_status') == False:
     st.error('نام کاربری یا رمز عبور اشتباه است')
     st.stop()
 
-if st.session_state.authentication_status == None:
+if st.session_state.get('authentication_status') is None:
     st.warning('لطفاً نام کاربری و رمز عبور خود را وارد کنید')
     st.stop()
 
 # If authenticated, show the main app
-if st.session_state.authentication_status:
+if st.session_state.get('authentication_status'):
     
     # ==================== CUSTOM SIDEBAR ====================
     
