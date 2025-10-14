@@ -536,7 +536,7 @@ if st.session_state.get('authentication_status'):
         }
         
         .info-item {
-            background: #e8f7cf;
+            background: #f8f9fa;
             padding: 1rem;
             border-radius: 12px;
             text-align: center;
@@ -589,7 +589,7 @@ if st.session_state.get('authentication_status'):
         
         .risk-card-critical {
             border-color: #d32f2f;
-            background: linear-gradient(#ef5350 100%);
+            background: linear-gradient(135deg, #ffcdd2 0%, #ef5350 100%);
         }
         
         .risk-card .info-label {
@@ -1155,61 +1155,57 @@ if st.session_state.get('authentication_status'):
                     <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📥 دانلود نتایج</h3>
                     """, unsafe_allow_html=True)
                     
-                    # Prepare Excel data
-                    excel_data = []
-                    for filename, result in results:
-                        if 'error' not in result:
-                            try:
-                                analysis = result['تحلیل_جامع_گزارش_حسابرسی']['بخش۱_خلاصه_و_اطلاعات_کلیدی']
-                                excel_data.append({
+                    # Prepare comprehensive Excel data with all JSON fields
+                    output = BytesIO()
+                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                        
+                        # Sheet 1: خلاصه اطلاعات
+                        summary_data = []
+                        for filename, result in results:
+                            if 'error' not in result:
+                                try:
+                                    analysis = result['تحلیل_جامع_گزارش_حسابرسی']['بخش۱_خلاصه_و_اطلاعات_کلیدی']
+                                    summary_data.append({
+                                        'نام فایل': filename,
+                                        'نام شرکت': analysis.get('نام_شرکت', ''),
+                                        'دوره مالی': analysis.get('دوره_مالی', ''),
+                                        'نام حسابرس': analysis.get('نام_حسابرس', ''),
+                                        'نوع اظهارنظر': analysis.get('نوع_اظهارنظر', ''),
+                                        'سطح ریسک (بازرس)': analysis.get('سطح_ریسک_کلی_بنا_به_نظر_بازرس', ''),
+                                        'سطح ریسک (مدل AI)': analysis.get('سطح_ریسک_کلی_بنا_به_نظر_مدل_زبانی', ''),
+                                        'جزییات سطح ریسک': analysis.get('جزییات_سطح_ریسک_تعیین_شده_توسط_مدل', ''),
+                                        'نکات کلیدی': '\n'.join(analysis.get('نکات_کلیدی_و_نتیجه_گیری', []))
+                                    })
+                                except:
+                                    summary_data.append({
+                                        'نام فایل': filename,
+                                        'نام شرکت': 'خطا در استخراج',
+                                        'دوره مالی': '',
+                                        'نام حسابرس': '',
+                                        'نوع اظهارنظر': '',
+                                        'سطح ریسک (بازرس)': '',
+                                        'سطح ریسک (مدل AI)': '',
+                                        'جزییات سطح ریسک': '',
+                                        'نکات کلیدی': ''
+                                    })
+                            else:
+                                summary_data.append({
                                     'نام فایل': filename,
-                                    'نام شرکت': analysis.get('نام_شرکت', ''),
-                                    'دوره مالی': analysis.get('دوره_مالی', ''),
-                                    'نام حسابرس': analysis.get('نام_حسابرس', ''),
-                                    'نوع اظهارنظر': analysis.get('نوع_اظهارنظر', ''),
-                                    'سطح ریسک (بازرس)': analysis.get('سطح_ریسک_کلی_بنا_به_نظر_بازرس', ''),
-                                    'سطح ریسک (مدل AI)': analysis.get('سطح_ریسک_کلی_بنا_به_نظر_مدل_زبانی', ''),
-                                    'جزییات ریسک': analysis.get('جزییات_سطح_ریسک_تعیین_شده_توسط_مدل', ''),
-                                    'نکات کلیدی': ', '.join(analysis.get('نکات_کلیدی_و_نتیجه_گیری', []))
-                                })
-                            except:
-                                excel_data.append({
-                                    'نام فایل': filename,
-                                    'نام شرکت': 'خطا در استخراج',
+                                    'نام شرکت': 'خطا',
                                     'دوره مالی': '',
                                     'نام حسابرس': '',
                                     'نوع اظهارنظر': '',
                                     'سطح ریسک (بازرس)': '',
                                     'سطح ریسک (مدل AI)': '',
-                                    'جزییات ریسک': '',
+                                    'جزییات سطح ریسک': result.get('error', ''),
                                     'نکات کلیدی': ''
                                 })
-                        else:
-                            excel_data.append({
-                                'نام فایل': filename,
-                                'نام شرکت': 'خطا',
-                                'دوره مالی': '',
-                                'نام حسابرس': '',
-                                'نوع اظهارنظر': '',
-                                'سطح ریسک (بازرس)': '',
-                                'سطح ریسک (مدل AI)': '',
-                                'جزییات ریسک': result.get('error', ''),
-                                'نکات کلیدی': ''
-                            })
-                    
-                    if excel_data:
-                        df = pd.DataFrame(excel_data)
                         
-                        # Create Excel file in memory
-                        output = BytesIO()
-                        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                            df.to_excel(writer, index=False, sheet_name='نتایج تحلیل')
+                        if summary_data:
+                            df_summary = pd.DataFrame(summary_data)
+                            df_summary.to_excel(writer, index=False, sheet_name='خلاصه اطلاعات')
                             
-                            # Get the workbook and worksheet
-                            workbook = writer.book
-                            worksheet = writer.sheets['نتایج تحلیل']
-                            
-                            # Adjust column widths
+                            worksheet = writer.sheets['خلاصه اطلاعات']
                             for column in worksheet.columns:
                                 max_length = 0
                                 column_letter = column[0].column_letter
@@ -1219,35 +1215,141 @@ if st.session_state.get('authentication_status'):
                                             max_length = len(str(cell.value))
                                     except:
                                         pass
-                                adjusted_width = min(max_length + 2, 50)
+                                adjusted_width = min(max_length + 2, 60)
                                 worksheet.column_dimensions[column_letter].width = adjusted_width
                         
-                        excel_file = output.getvalue()
+                        # Sheet 2: داده کامل JSON
+                        json_data = []
+                        for filename, result in results:
+                            if 'error' not in result:
+                                try:
+                                    # Flatten the entire JSON structure
+                                    json_str = json.dumps(result, ensure_ascii=False, indent=2)
+                                    json_data.append({
+                                        'نام فایل': filename,
+                                        'داده کامل JSON': json_str
+                                    })
+                                except:
+                                    json_data.append({
+                                        'نام فایل': filename,
+                                        'داده کامل JSON': 'خطا در تبدیل JSON'
+                                    })
+                            else:
+                                json_data.append({
+                                    'نام فایل': filename,
+                                    'داده کامل JSON': result.get('error', '')
+                                })
                         
-                        col1, col2, col3 = st.columns([1, 2, 1])
-                        with col2:
-                            st.download_button(
-                                label="📥 دانلود فایل اکسل",
-                                data=excel_file,
-                                file_name=f"نتایج_تحلیل_مالی_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                use_container_width=True
-                            )
+                        if json_data:
+                            df_json = pd.DataFrame(json_data)
+                            df_json.to_excel(writer, index=False, sheet_name='داده کامل JSON')
+                            
+                            worksheet = writer.sheets['داده کامل JSON']
+                            worksheet.column_dimensions['A'].width = 30
+                            worksheet.column_dimensions['B'].width = 100
+                            
+                            # Enable text wrapping for JSON column
+                            from openpyxl.styles import Alignment
+                            for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row, min_col=2, max_col=2):
+                                for cell in row:
+                                    cell.alignment = Alignment(wrap_text=True, vertical='top')
                         
-                        st.markdown(f"""
-                        <div class="alert-box alert-success">
-                            <div class="alert-title">✅ آماده دانلود</div>
-                            <div class="alert-content">
-                                <p>فایل اکسل شامل {len(excel_data)} ردیف اطلاعات آماده دانلود است.</p>
-                                <ul>
-                                    <li>📊 شامل تمامی اطلاعات تحلیل شده</li>
-                                    <li>📋 فرمت استاندارد اکسل</li>
-                                    <li>🎯 قابل استفاده در گزارش‌های مالی</li>
-                                </ul>
-                            </div>
+                        # Sheet 3: نکات کلیدی (جداگانه)
+                        notes_data = []
+                        for filename, result in results:
+                            if 'error' not in result:
+                                try:
+                                    analysis = result['تحلیل_جامع_گزارش_حسابرسی']['بخش۱_خلاصه_و_اطلاعات_کلیدی']
+                                    notes = analysis.get('نکات_کلیدی_و_نتیجه_گیری', [])
+                                    for i, note in enumerate(notes, 1):
+                                        notes_data.append({
+                                            'نام فایل': filename,
+                                            'نام شرکت': analysis.get('نام_شرکت', ''),
+                                            'ردیف': i,
+                                            'نکته کلیدی': note
+                                        })
+                                except:
+                                    pass
+                        
+                        if notes_data:
+                            df_notes = pd.DataFrame(notes_data)
+                            df_notes.to_excel(writer, index=False, sheet_name='نکات کلیدی')
+                            
+                            worksheet = writer.sheets['نکات کلیدی']
+                            for column in worksheet.columns:
+                                max_length = 0
+                                column_letter = column[0].column_letter
+                                for cell in column:
+                                    try:
+                                        if len(str(cell.value)) > max_length:
+                                            max_length = len(str(cell.value))
+                                    except:
+                                        pass
+                                adjusted_width = min(max_length + 2, 80)
+                                worksheet.column_dimensions[column_letter].width = adjusted_width
+                        
+                        # Sheet 4: مقایسه سطح ریسک
+                        risk_comparison_data = []
+                        for filename, result in results:
+                            if 'error' not in result:
+                                try:
+                                    analysis = result['تحلیل_جامع_گزارش_حسابرسی']['بخش۱_خلاصه_و_اطلاعات_کلیدی']
+                                    risk_comparison_data.append({
+                                        'نام فایل': filename,
+                                        'نام شرکت': analysis.get('نام_شرکت', ''),
+                                        'دوره مالی': analysis.get('دوره_مالی', ''),
+                                        'سطح ریسک (نظر بازرس)': analysis.get('سطح_ریسک_کلی_بنا_به_نظر_بازرس', ''),
+                                        'سطح ریسک (نظر مدل AI)': analysis.get('سطح_ریسک_کلی_بنا_به_نظر_مدل_زبانی', ''),
+                                        'توافق ریسک': 'بله' if analysis.get('سطح_ریسک_کلی_بنا_به_نظر_بازرس') == analysis.get('سطح_ریسک_کلی_بنا_به_نظر_مدل_زبانی') else 'خیر',
+                                        'جزییات تعیین ریسک توسط مدل': analysis.get('جزییات_سطح_ریسک_تعیین_شده_توسط_مدل', '')
+                                    })
+                                except:
+                                    pass
+                        
+                        if risk_comparison_data:
+                            df_risk = pd.DataFrame(risk_comparison_data)
+                            df_risk.to_excel(writer, index=False, sheet_name='مقایسه سطح ریسک')
+                            
+                            worksheet = writer.sheets['مقایسه سطح ریسک']
+                            for column in worksheet.columns:
+                                max_length = 0
+                                column_letter = column[0].column_letter
+                                for cell in column:
+                                    try:
+                                        if len(str(cell.value)) > max_length:
+                                            max_length = len(str(cell.value))
+                                    except:
+                                        pass
+                                adjusted_width = min(max_length + 2, 70)
+                                worksheet.column_dimensions[column_letter].width = adjusted_width
+                    
+                    excel_file = output.getvalue()
+                    
+                    col1, col2, col3 = st.columns([1, 2, 1])
+                    with col2:
+                        st.download_button(
+                            label="📥 دانلود فایل اکسل کامل",
+                            data=excel_file,
+                            file_name=f"تحلیل_کامل_مالی_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True
+                        )
+                    
+                    st.markdown(f"""
+                    <div class="alert-box alert-success">
+                        <div class="alert-title">✅ آماده دانلود</div>
+                        <div class="alert-content">
+                            <p><strong>فایل اکسل شامل {len(results)} گزارش در 4 شیت جداگانه:</strong></p>
+                            <ul>
+                                <li>📊 <strong>شیت 1:</strong> خلاصه اطلاعات کلیدی</li>
+                                <li>💾 <strong>شیت 2:</strong> داده کامل JSON (ساختار کامل پاسخ)</li>
+                                <li>📝 <strong>شیت 3:</strong> نکات کلیدی (جدول جداگانه)</li>
+                                <li>⚖️ <strong>شیت 4:</strong> مقایسه سطح ریسک (بازرس vs AI)</li>
+                            </ul>
+                            <p style="margin-top: 1rem;">✨ تمامی فیلدهای JSON در فایل اکسل موجود است</p>
                         </div>
-                        """, unsafe_allow_html=True)
+                    </div>
+                    """, unsafe_allow_html=True)
 
     if __name__ == "__main__":
         main()
-
