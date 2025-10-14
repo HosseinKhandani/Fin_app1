@@ -537,7 +537,7 @@ if st.session_state.get('authentication_status'):
         }
         
         .info-item {
-            background: #f8f9fa;
+            background: #b3e3db;
             padding: 1rem;
             border-radius: 12px;
             text-align: center;
@@ -1354,4 +1354,5 @@ if st.session_state.get('authentication_status'):
 
     if __name__ == "__main__":
         main()
+
 
