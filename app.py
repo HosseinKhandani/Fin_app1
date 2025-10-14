@@ -714,12 +714,7 @@ if st.session_state.get('authentication_status'):
             
             uploaded_files = None
             if upload_method == "📄 فایل‌های جداگانه":
-                st.markdown("""
-                <div class="upload-zone">
-                    <div class="upload-icon">📁</div>
-                    <div class="upload-title">فایل‌های PDF را بارگذاری کنید</div>
-                </div>
-                """, unsafe_allow_html=True)
+                
                 
                 uploaded_files = st.file_uploader(
                     "انتخاب فایل‌ها",
@@ -1076,4 +1071,5 @@ if st.session_state.get('authentication_status'):
 
     if __name__ == "__main__":
         main()
+
 
