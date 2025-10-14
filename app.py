@@ -1083,6 +1083,134 @@ if st.session_state.authentication_status:
                         <div class="alert-title">✅ فایل‌های Excel آماده دانلود هستند</div>
                     </div>
                     """, unsafe_allow_html=True)
+    
+    # Helper functions for Excel conversion
+    def flatten_reference_data(df):
+        if 'ارجاع' in df.columns:
+            df['شماره_بند'] = df['ارجاع'].apply(
+                lambda x: x.get('شماره_بند', '') if isinstance(x, dict) else ''
+            )
+            df['شماره_صفحه'] = df['ارجاع'].apply(
+                lambda x: x.get('شماره_صفحه', '') if isinstance(x, dict) else ''
+            )
+            df = df.drop('ارجاع', axis=1)
+        return df
+    
+    def flatten_array_fields(df):
+        for col in df.columns:
+            df[col] = df[col].apply(
+                lambda x: ", ".join(x) if isinstance(x, list) else x
+            )
+        return df
+    
+    def convert_to_excel(results):
+        temp_dir = tempfile.mkdtemp()
+        excel_files = []
+        
+        for filename, data in results:
+            try:
+                if "error" in data:
+                    continue
+                
+                report = data["تحلیل_جامع_گزارش_حسابرسی"]
+                
+                try:
+                    company_name = report["بخش۱_خلاصه_و_اطلاعات_کلیدی"]["نام_شرکت"]
+                    financial_year = report["بخش۱_خلاصه_و_اطلاعات_کلیدی"]["دوره_مالی"]
+                    
+                    year_match = re.search(r'(\d{4})', financial_year)
+                    if year_match:
+                        year = year_match.group(1)
+                    else:
+                        year = "Unknown"
+                    
+                    clean_company_name = re.sub(r'[\\/:"*?<>|]+', "", company_name).strip()
+                    if not clean_company_name:
+                        clean_company_name = f"Company_{len(excel_files) + 1}"
+                    
+                    excel_filename = f"{clean_company_name}_{year}.xlsx"
+                    
+                except:
+                    excel_filename = f"Company_{len(excel_files) + 1}.xlsx"
+                
+                output_file = os.path.join(temp_dir, excel_filename)
+                
+                with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
+                    try:
+                        part1 = report["بخش۱_خلاصه_و_اطلاعات_کلیدی"]
+                        df1 = pd.DataFrame.from_dict({k: [v] if not isinstance(v, list) else [", ".join(v)] 
+                                        for k, v in part1.items()})
+                        df1.to_excel(writer, sheet_name="بخش1_خلاصه", index=False)
+                    except Exception as e:
+                        pass
+                    
+                    try:
+                        part2 = report["بخش۲_تجزیه_تحلیل_گزارش"]
+                        
+                        if "بند_اظهارنظر" in part2:
+                            df_opinion = pd.DataFrame([part2["بند_اظهارنظر"]])
+                            df_opinion.to_excel(writer, sheet_name="بند_اظهارنظر", index=False)
+                        
+                        if "بند_مبانی_اظهارنظر" in part2:
+                            basis_data = part2["بند_مبانی_اظهارنظر"]
+                            if part2["بند_مبانی_اظهارنظر"]["موضوعیت_دارد"]:
+                                df_basis = pd.DataFrame(part2["بند_مبانی_اظهارنظر"]["موارد_مطرح_شده"])
+                                df_basis = flatten_reference_data(df_basis)
+                                df_basis = flatten_array_fields(df_basis)
+                            else:
+                                df_basis = pd.DataFrame([{"موضوعیت_دارد": False}])
+                            df_basis.to_excel(writer, sheet_name="بند_مبانی_اظهارنظر", index=False)
+                        
+                        if "بند_تاکید_بر_مطالب_خاص" in part2:
+                            emphasis_data = part2["بند_تاکید_بر_مطالب_خاص"]
+                            if emphasis_data.get("موضوعیت_دارد", False) and "موارد_مطرح_شده" in emphasis_data:
+                                df_emphasis = pd.DataFrame(emphasis_data["موارد_مطرح_شده"])
+                                df_emphasis = flatten_reference_data(df_emphasis)
+                                df_emphasis = flatten_array_fields(df_emphasis)
+                            else:
+                                df_emphasis = pd.DataFrame([{"موضوعیت_دارد": False}])
+                            df_emphasis.to_excel(writer, sheet_name="بند_تاکید_بر_مطالب_خاص", index=False)
+                        
+                        if "گزارش_رعایت_الزامات_قانونی" in part2:
+                            legal_data = part2["گزارش_رعایت_الزامات_قانونی"]
+                            if legal_data.get("موضوعیت_دارد", False) and "تخلفات" in legal_data:
+                                violations = legal_data["تخلفات"]
+                                processed_violations = []
+                                
+                                for violation in violations:
+                                    processed_violation = violation.copy()
+                                    if "مبانی_قانونی_و_استانداردها" in processed_violation:
+                                        processed_violation["مبانی_قانونی_و_استانداردها"] = ", ".join(
+                                            processed_violation["مبانی_قانونی_و_استانداردها"]
+                                        )
+                                    processed_violations.append(processed_violation)
+                                
+                                df_legal = pd.DataFrame(processed_violations)
+                                df_legal = flatten_reference_data(df_legal)
+                                df_legal = flatten_array_fields(df_legal)
+                            else:
+                                df_legal = pd.DataFrame([{"موضوعیت_دارد": False}])
+                            df_legal.to_excel(writer, sheet_name="گزارش_قانونی", index=False)
+                    
+                    except Exception as e:
+                        pass
+                    
+                    try:
+                        if "بخش۳_چک_لیست_موضوعی" in report:
+                            part3 = report["بخش۳_چک_لیست_موضوعی"]
+                            df3 = pd.DataFrame(part3)
+                            df3 = flatten_reference_data(df3)
+                            df3 = flatten_array_fields(df3)
+                            df3.to_excel(writer, sheet_name="بخش3_چک_لیست", index=False)
+                    except Exception as e:
+                        pass
+                
+                excel_files.append(output_file)
+                
+            except Exception as e:
+                pass
+        
+        return excel_files
 
     if __name__ == "__main__":
         main() Upload method selection
