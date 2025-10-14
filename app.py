@@ -35,7 +35,39 @@ api_keys = []
 
 # ==================== AUTHENTICATION CODE START ====================
 
-with open('config.yaml') as file:
+# Create config if it doesn't exist
+config_path = 'config.yaml'
+if not os.path.exists(config_path):
+    default_config = {
+        'credentials': {
+            'usernames': {
+                'admin': {
+                    'email': 'admin@example.com',
+                    'name': 'مدیر سیستم',
+                    'password': 'placeholder'
+                },
+                'fin.analyst': {
+                    'email': 'analyst@example.com',
+                    'name': 'تحلیلگر مالی',
+                    'password': 'placeholder'
+                },
+                'h.khandani': {
+                    'email': 'khandani@example.com',
+                    'name': 'حسام خندانی',
+                    'password': 'placeholder'
+                }
+            }
+        },
+        'cookie': {
+            'name': 'financial_analyzer_cookie',
+            'key': 'random_signature_key_12345',
+            'expiry_days': 30
+        }
+    }
+    with open(config_path, 'w', encoding='utf-8') as f:
+        yaml.dump(default_config, f, allow_unicode=True)
+
+with open('config.yaml', encoding='utf-8') as file:
     config = yaml.load(file, Loader=SafeLoader)
 
 hashed_passwords = stauth.Hasher(["elnagh", "abc_fin_cba","123"]).generate()
@@ -61,11 +93,11 @@ if st.session_state.authentication_status is None:
     st.session_state.username = username
 
 if st.session_state.authentication_status == False:
-    st.error('Username/password is incorrect')
+    st.error('نام کاربری یا رمز عبور اشتباه است')
     st.stop()
 
 if st.session_state.authentication_status == None:
-    st.warning('Please enter your username and password')
+    st.warning('لطفاً نام کاربری و رمز عبور خود را وارد کنید')
     st.stop()
 
 # If authenticated, show the main app
