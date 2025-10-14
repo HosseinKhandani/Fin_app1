@@ -734,7 +734,7 @@ if st.session_state.get('authentication_status'):
         """, unsafe_allow_html=True)
         
         # Create tabs
-        tab1, tab2, tab3 = st.tabs(["📁 بارگذاری فایل", "⚙️ پردازش و تحلیل", "📊 نتایج و گزارشات"])
+        tab1, tab2 = st.tabs(["📁 بارگذاری فایل", "⚙️ پردازش و نتایج"])
         
         # ==================== TAB 1: FILE UPLOAD ====================
         with tab1:
@@ -898,7 +898,7 @@ if st.session_state.get('authentication_status'):
                 st.markdown("""
                 <div class="nav-helper">
                     <div class="nav-helper-title">🎯 مرحله بعدی</div>
-                    <div class="nav-helper-text">برای شروع تحلیل، به تب "پردازش و تحلیل" بروید ⬅️</div>
+                    <div class="nav-helper-text">برای شروع تحلیل و مشاهده نتایج، به تب "پردازش و نتایج" بروید ⬅️</div>
                 </div>
                 """, unsafe_allow_html=True)
             
@@ -910,7 +910,7 @@ if st.session_state.get('authentication_status'):
                 </div>
                 """, unsafe_allow_html=True)
         
-        # ==================== TAB 2: PROCESSING ====================
+        # ==================== TAB 2: PROCESSING & RESULTS ====================
         with tab2:
             if not st.session_state.uploaded_files:
                 st.markdown("""
@@ -922,6 +922,7 @@ if st.session_state.get('authentication_status'):
                 </div>
                 """, unsafe_allow_html=True)
             else:
+                # ==================== PROCESSING SECTION ====================
                 st.markdown("""
                 <div class="alert-box alert-info">
                     <div class="alert-title">🤖 تحلیل هوشمند با AI</div>
@@ -1036,109 +1037,163 @@ if st.session_state.get('authentication_status'):
                         <div class="alert-content">{len(results)} فایل پردازش شد</div>
                     </div>
                     """, unsafe_allow_html=True)
-                    
-                    st.markdown("""
-                    <div class="nav-helper">
-                        <div class="nav-helper-title">🎯 مرحله بعدی</div>
-                        <div class="nav-helper-text">برای مشاهده نتایج، به تب "نتایج و گزارشات" بروید ⬅️</div>
-                    </div>
-                    """, unsafe_allow_html=True)
                 
-                # Show previous results if exist
+                # ==================== RESULTS SECTION ====================
                 if st.session_state.results:
                     st.markdown("""
-                    <div class="alert-box alert-success">
-                        <div class="alert-title">✅ نتایج قبلی موجود است</div>
-                        <div class="alert-content">می‌توانید نتایج را در تب "نتایج و گزارشات" مشاهده کنید</div>
-                    </div>
+                    <hr style="margin: 3rem 0; border: none; height: 2px; background: linear-gradient(90deg, transparent, #667eea, transparent);">
                     """, unsafe_allow_html=True)
-        
-        # ==================== TAB 3: RESULTS ====================
-        with tab3:
-            if not st.session_state.results:
-                st.markdown("""
-                <div class="alert-box alert-warning">
-                    <div class="alert-title">⚠️ هنوز نتیجه‌ای وجود ندارد</div>
-                    <div class="alert-content">
-                        <p>لطفاً ابتدا فایل‌ها را بارگذاری کرده و تحلیل را انجام دهید</p>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                results = st.session_state.results
-                
-                # Results summary
-                st.markdown("""
-                <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📊 خلاصه نتایج</h3>
-                """, unsafe_allow_html=True)
-                
-                successful = sum(1 for _, result in results if 'error' not in result)
-                failed = len(results) - successful
-                success_rate = (successful / len(results)) * 100 if results else 0
-                
-                col1, col2, col3, col4 = st.columns(4)
-                
-                with col1:
-                    st.markdown(f"""
-                    <div class="modern-metric" style="--gradient-start: #667eea; --gradient-end: #764ba2;">
-                        <div class="metric-icon">📊</div>
-                        <div class="metric-value">{len(results)}</div>
-                        <div class="metric-label">کل فایل‌ها</div>
-                    </div>
+                    
+                    results = st.session_state.results
+                    
+                    # Results summary
+                    st.markdown("""
+                    <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📊 خلاصه نتایج</h3>
                     """, unsafe_allow_html=True)
-                
-                with col2:
-                    st.markdown(f"""
-                    <div class="modern-metric" style="--gradient-start: #4caf50; --gradient-end: #66bb6a;">
-                        <div class="metric-icon">✅</div>
-                        <div class="metric-value">{successful}</div>
-                        <div class="metric-label">موفق</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col3:
-                    st.markdown(f"""
-                    <div class="modern-metric" style="--gradient-start: #f44336; --gradient-end: #e57373;">
-                        <div class="metric-icon">❌</div>
-                        <div class="metric-value">{failed}</div>
-                        <div class="metric-label">ناموفق</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col4:
-                    st.markdown(f"""
-                    <div class="modern-metric" style="--gradient-start: #f093fb; --gradient-end: #f5576c;">
-                        <div class="metric-icon">📈</div>
-                        <div class="metric-value">{success_rate:.0f}%</div>
-                        <div class="metric-label">نرخ موفقیت</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                # Results details
-                st.markdown("""
-                <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📋 جزئیات نتایج</h3>
-                """, unsafe_allow_html=True)
-                
-                for filename, result in results:
-                    if 'error' in result:
+                    
+                    successful = sum(1 for _, result in results if 'error' not in result)
+                    failed = len(results) - successful
+                    success_rate = (successful / len(results)) * 100 if results else 0
+                    
+                    col1, col2, col3, col4 = st.columns(4)
+                    
+                    with col1:
                         st.markdown(f"""
-                        <div class="result-card" style="border-top-color: #f44336;">
-                            <div class="result-header">
-                                <div class="result-title">❌ {filename}</div>
-                            </div>
-                            <div class="alert-content" style="color: #f44336;">{result['error']}</div>
+                        <div class="modern-metric" style="--gradient-start: #667eea; --gradient-end: #764ba2;">
+                            <div class="metric-icon">📊</div>
+                            <div class="metric-value">{len(results)}</div>
+                            <div class="metric-label">کل فایل‌ها</div>
                         </div>
                         """, unsafe_allow_html=True)
-                    else:
-                        try:
-                            analysis = result['تحلیل_جامع_گزارش_حسابرسی']['بخش۱_خلاصه_و_اطلاعات_کلیدی']
-                            company_name = analysis['نام_شرکت']
-                            auditor_name = analysis['نام_حسابرس']
-                            opinion_type = analysis['نوع_اظهارنظر']
-                            risk_level = analysis['سطح_ریسک_کلی_بنا_به_نظر_مدل_زبانی']
-                            financial_year = analysis['دوره_مالی']
-                            
-                            risk_classes = {
+                    
+                    with col2:
+                        st.markdown(f"""
+                        <div class="modern-metric" style="--gradient-start: #4caf50; --gradient-end: #66bb6a;">
+                            <div class="metric-icon">✅</div>
+                            <div class="metric-value">{successful}</div>
+                            <div class="metric-label">موفق</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    with col3:
+                        st.markdown(f"""
+                        <div class="modern-metric" style="--gradient-start: #f44336; --gradient-end: #e57373;">
+                            <div class="metric-icon">❌</div>
+                            <div class="metric-value">{failed}</div>
+                            <div class="metric-label">ناموفق</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    with col4:
+                        st.markdown(f"""
+                        <div class="modern-metric" style="--gradient-start: #f093fb; --gradient-end: #f5576c;">
+                            <div class="metric-icon">📈</div>
+                            <div class="metric-value">{success_rate:.0f}%</div>
+                            <div class="metric-label">نرخ موفقیت</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    # Results details
+                    st.markdown("""
+                    <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📋 جزئیات نتایج</h3>
+                    """, unsafe_allow_html=True)
+                    
+                    for filename, result in results:
+                        if 'error' in result:
+                            st.markdown(f"""
+                            <div class="result-card" style="border-top-color: #f44336;">
+                                <div class="result-header">
+                                    <div class="result-title">❌ {filename}</div>
+                                </div>
+                                <div class="alert-content" style="color: #f44336;">{result['error']}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            try:
+                                analysis = result['تحلیل_جامع_گزارش_حسابرسی']['بخش۱_خلاصه_و_اطلاعات_کلیدی']
+                                company_name = analysis['نام_شرکت']
+                                auditor_name = analysis['نام_حسابرس']
+                                opinion_type = analysis['نوع_اظهارنظر']
+                                risk_level = analysis['سطح_ریسک_کلی_بنا_به_نظر_مدل_زبانی']
+                                financial_year = analysis['دوره_مالی']
+                                
+                                risk_classes = {
+                                    'پایین': 'risk-low',
+                                    'متوسط': 'risk-medium',
+                                    'بالا': 'risk-high',
+                                    'بحرانی': 'risk-critical'
+                                }
+                                risk_class = risk_classes.get(risk_level, 'risk-low')
+                                
+                                risk_icons = {
+                                    'پایین': '🟢',
+                                    'متوسط': '🟡',
+                                    'بالا': '🟠',
+                                    'بحرانی': '🔴'
+                                }
+                                risk_icon = risk_icons.get(risk_level, '⚪')
+                                
+                                risk_colors = {
+                                    'پایین': '#4caf50',
+                                    'متوسط': '#ff9800',
+                                    'بالا': '#ff5722',
+                                    'بحرانی': '#f44336'
+                                }
+                                border_color = risk_colors.get(risk_level, '#4caf50')
+                                
+                                st.markdown(f"""
+                                <div class="result-card" style="border-top-color: {border_color};">
+                                    <div class="result-header">
+                                        <div class="result-title">✅ {filename}</div>
+                                        <div class="risk-badge {risk_class}">{risk_icon} {risk_level}</div>
+                                    </div>
+                                    <div class="info-grid">
+                                        <div class="info-item">
+                                            <div class="info-label">🏢 نام شرکت</div>
+                                            <div class="info-value">{company_name}</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label">📅 دوره مالی</div>
+                                            <div class="info-value">{financial_year}</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label">👨‍💼 حسابرس</div>
+                                            <div class="info-value">{auditor_name}</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label">📋 نوع اظهارنظر</div>
+                                            <div class="info-value">{opinion_type}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                            except:
+                                st.markdown(f"""
+                                <div class="result-card" style="border-top-color: #4caf50;">
+                                    <div class="result-header">
+                                        <div class="result-title">✅ {filename}</div>
+                                    </div>
+                                    <div class="alert-content">تحلیل موفق - اطلاعات جزئی در دسترس نیست</div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                    
+                    # Download Excel
+                    st.markdown("""
+                    <h3 style="color: #2c3e50; margin: 3rem 0 1rem 0;">📥 دانلود گزارشات</h3>
+                    """, unsafe_allow_html=True)
+                    
+                    if st.button("📊 تبدیل به Excel و دانلود", type="primary", key="download_excel"):
+                        st.markdown("""
+                        <div class="alert-box alert-info">
+                            <div class="alert-title">⏳ در حال ایجاد فایل‌های Excel...</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        st.markdown("""
+                        <div class="alert-box alert-success">
+                            <div class="alert-title">✅ فایل‌های Excel آماده دانلود هستند</div>
+                        </div>
+                        """, unsafe_allow_html=True)
                                 'پایین': 'risk-low',
                                 'متوسط': 'risk-medium',
                                 'بالا': 'risk-high',
