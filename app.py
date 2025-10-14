@@ -1270,6 +1270,10 @@ if st.session_state.get('authentication_status'):
                         <div class="alert-title">✅ فایل‌های Excel آماده دانلود هستند</div>
                     </div>
                     """, unsafe_allow_html=True)
+                        <div class="alert-box alert-success">
+                            <div class="alert-title">✅ فایل‌های Excel آماده دانلود هستند</div>
+                        </div>
+                        """, unsafe_allow_html=True)
 
     if __name__ == "__main__":
         main()
