@@ -529,7 +529,7 @@ if st.session_state.get('authentication_status'):
         
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 1rem;
             margin-top: 1.5rem;
         }
@@ -554,6 +554,41 @@ if st.session_state.get('authentication_status'):
             color: #2c3e50;
             font-size: 1.1rem;
             font-weight: 700;
+        }
+        
+        .risk-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+            border: 3px solid;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .risk-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        
+        .risk-card-low {
+            border-color: #4caf50;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        }
+        
+        .risk-card-medium {
+            border-color: #ff9800;
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        }
+        
+        .risk-card-high {
+            border-color: #f44336;
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        }
+        
+        .risk-card-critical {
+            border-color: #d32f2f;
+            background: linear-gradient(135deg, #ffcdd2 0%, #ef5350 100%);
         }
         
         .nav-helper {
@@ -1048,16 +1083,23 @@ if st.session_state.get('authentication_status'):
                                 risk_colors = {
                                     'پایین': '#4caf50',
                                     'متوسط': '#ff9800',
-                                    'بالا': '#ff5722',
+                                    'بالا': '#f44336',
                                     'بحرانی': '#f44336'
                                 }
                                 border_color = risk_colors.get(risk_level, '#4caf50')
+                                
+                                risk_card_classes = {
+                                    'پایین': 'risk-card-low',
+                                    'متوسط': 'risk-card-medium',
+                                    'بالا': 'risk-card-high',
+                                    'بحرانی': 'risk-card-critical'
+                                }
+                                risk_card_class = risk_card_classes.get(risk_level, 'risk-card-low')
                                 
                                 st.markdown(f"""
                                 <div class="result-card" style="border-top-color: {border_color};">
                                     <div class="result-header">
                                         <div class="result-title">✅ {filename}</div>
-                                        <div class="risk-badge {risk_class}">{risk_icon} {risk_level}</div>
                                     </div>
                                     <div class="info-grid">
                                         <div class="info-item">
@@ -1072,9 +1114,15 @@ if st.session_state.get('authentication_status'):
                                             <div class="info-label">👨‍💼 حسابرس</div>
                                             <div class="info-value">{auditor_name}</div>
                                         </div>
+                                    </div>
+                                    <div class="info-grid" style="margin-top: 1rem;">
                                         <div class="info-item">
                                             <div class="info-label">📋 نوع اظهارنظر</div>
                                             <div class="info-value">{opinion_type}</div>
+                                        </div>
+                                        <div class="risk-card {risk_card_class}">
+                                            <div class="info-label" style="color: {border_color};">🎯 سطح ریسک</div>
+                                            <div class="info-value" style="color: {border_color}; font-size: 1.5rem;">{risk_icon} {risk_level}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -1088,6 +1136,108 @@ if st.session_state.get('authentication_status'):
                                     <div class="alert-content">تحلیل موفق</div>
                                 </div>
                                 """, unsafe_allow_html=True)
+                    
+                    # ==================== DOWNLOAD SECTION ====================
+                    st.markdown("""
+                    <hr style="margin: 3rem 0; border: none; height: 2px; background: linear-gradient(90deg, transparent, #667eea, transparent);">
+                    """, unsafe_allow_html=True)
+                    
+                    st.markdown("""
+                    <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📥 دانلود نتایج</h3>
+                    """, unsafe_allow_html=True)
+                    
+                    # Prepare Excel data
+                    excel_data = []
+                    for filename, result in results:
+                        if 'error' not in result:
+                            try:
+                                analysis = result['تحلیل_جامع_گزارش_حسابرسی']['بخش۱_خلاصه_و_اطلاعات_کلیدی']
+                                excel_data.append({
+                                    'نام فایل': filename,
+                                    'نام شرکت': analysis.get('نام_شرکت', ''),
+                                    'دوره مالی': analysis.get('دوره_مالی', ''),
+                                    'نام حسابرس': analysis.get('نام_حسابرس', ''),
+                                    'نوع اظهارنظر': analysis.get('نوع_اظهارنظر', ''),
+                                    'سطح ریسک (بازرس)': analysis.get('سطح_ریسک_کلی_بنا_به_نظر_بازرس', ''),
+                                    'سطح ریسک (مدل AI)': analysis.get('سطح_ریسک_کلی_بنا_به_نظر_مدل_زبانی', ''),
+                                    'جزییات ریسک': analysis.get('جزییات_سطح_ریسک_تعیین_شده_توسط_مدل', ''),
+                                    'نکات کلیدی': ', '.join(analysis.get('نکات_کلیدی_و_نتیجه_گیری', []))
+                                })
+                            except:
+                                excel_data.append({
+                                    'نام فایل': filename,
+                                    'نام شرکت': 'خطا در استخراج',
+                                    'دوره مالی': '',
+                                    'نام حسابرس': '',
+                                    'نوع اظهارنظر': '',
+                                    'سطح ریسک (بازرس)': '',
+                                    'سطح ریسک (مدل AI)': '',
+                                    'جزییات ریسک': '',
+                                    'نکات کلیدی': ''
+                                })
+                        else:
+                            excel_data.append({
+                                'نام فایل': filename,
+                                'نام شرکت': 'خطا',
+                                'دوره مالی': '',
+                                'نام حسابرس': '',
+                                'نوع اظهارنظر': '',
+                                'سطح ریسک (بازرس)': '',
+                                'سطح ریسک (مدل AI)': '',
+                                'جزییات ریسک': result.get('error', ''),
+                                'نکات کلیدی': ''
+                            })
+                    
+                    if excel_data:
+                        df = pd.DataFrame(excel_data)
+                        
+                        # Create Excel file in memory
+                        output = BytesIO()
+                        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                            df.to_excel(writer, index=False, sheet_name='نتایج تحلیل')
+                            
+                            # Get the workbook and worksheet
+                            workbook = writer.book
+                            worksheet = writer.sheets['نتایج تحلیل']
+                            
+                            # Adjust column widths
+                            for column in worksheet.columns:
+                                max_length = 0
+                                column_letter = column[0].column_letter
+                                for cell in column:
+                                    try:
+                                        if len(str(cell.value)) > max_length:
+                                            max_length = len(str(cell.value))
+                                    except:
+                                        pass
+                                adjusted_width = min(max_length + 2, 50)
+                                worksheet.column_dimensions[column_letter].width = adjusted_width
+                        
+                        excel_file = output.getvalue()
+                        
+                        col1, col2, col3 = st.columns([1, 2, 1])
+                        with col2:
+                            st.download_button(
+                                label="📥 دانلود فایل اکسل",
+                                data=excel_file,
+                                file_name=f"نتایج_تحلیل_مالی_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                use_container_width=True
+                            )
+                        
+                        st.markdown(f"""
+                        <div class="alert-box alert-success">
+                            <div class="alert-title">✅ آماده دانلود</div>
+                            <div class="alert-content">
+                                <p>فایل اکسل شامل {len(excel_data)} ردیف اطلاعات آماده دانلود است.</p>
+                                <ul>
+                                    <li>📊 شامل تمامی اطلاعات تحلیل شده</li>
+                                    <li>📋 فرمت استاندارد اکسل</li>
+                                    <li>🎯 قابل استفاده در گزارش‌های مالی</li>
+                                </ul>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
 
     if __name__ == "__main__":
         main()
