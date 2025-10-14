@@ -1,4 +1,4 @@
-def flatten_reference_data(df):
+                    def flatten_reference_data(df):
                         """تابع برای تبدیل ستون ارجاع به ستون‌های جداگانه"""
                         if 'ارجاع' in df.columns:
                             df['شماره_بند'] = df['ارجاع'].apply(
@@ -1768,3 +1768,4 @@ if st.session_state.get('authentication_status'):
 
     if __name__ == "__main__":
         main()
+
