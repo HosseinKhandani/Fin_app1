@@ -896,8 +896,10 @@ if st.session_state.get('authentication_status'):
                     
                     progress_bar = st.progress(0)
                     status_text = st.empty()
+                    time_text = st.empty()
                     
                     total_files = len(st.session_state.uploaded_files)
+                    estimated_time_per_file = 30
                     
                     for i, file in enumerate(st.session_state.uploaded_files):
                         try:
@@ -908,13 +910,34 @@ if st.session_state.get('authentication_status'):
                                 filename = file.name
                                 file_content = file.getvalue()
                             
+                            remaining_files = total_files - i
+                            remaining_time = remaining_files * estimated_time_per_file
+                            
                             status_text.markdown(f"""
                             <div class="alert-box alert-info">
-                                <div class="alert-title">🔄 در حال تحلیل</div>
-                                <div class="alert-content">فایل {i+1} از {total_files}: {filename}</div>
+                                <div class="alert-title">⏳ در حال پردازش...</div>
+                                <div class="alert-content">
+                                    <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">📄 فایل {i+1} از {total_files}: <strong>{filename}</strong></p>
+                                </div>
                             </div>
                             """, unsafe_allow_html=True)
                             
+                            time_text.markdown(f"""
+                            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                                        padding: 1.5rem; border-radius: 15px; text-align: center; 
+                                        color: white; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+                                        margin-bottom: 1rem;">
+                                <div style="font-size: 3rem; margin-bottom: 0.5rem;">⏳</div>
+                                <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 0.3rem;">
+                                    {remaining_time} ثانیه
+                                </div>
+                                <div style="font-size: 1rem; opacity: 0.9;">
+                                    زمان تقریبی باقیمانده
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            start_time = time.time()
                             result = analyzer.extract_table_from_page(file_content)
                             results.append((filename, result))
                             
@@ -926,6 +949,7 @@ if st.session_state.get('authentication_status'):
                     
                     st.session_state.results = results
                     
+                    time_text.empty()
                     status_text.markdown(f"""
                     <div class="alert-box alert-success">
                         <div class="alert-title">🎉 تحلیل تکمیل شد!</div>
