@@ -27,10 +27,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-proxy_url = "http://185.173.168.31:22525"
-os.environ['HTTP_PROXY'] = proxy_url
-os.environ['HTTPS_PROXY'] = proxy_url
-
 api_keys = [
     "AIzaSyAo5oFZqsTRkUIqJRjoefWINWpbwPHbEn8",
     "AIzaSyBeLYGH4JS-fPHYdqKgUPotV2dpGZYZ2to",
@@ -57,7 +53,7 @@ if not os.path.exists(config_path):
                 },
                 'h.khandani': {
                     'email': 'khandani@example.com',
-                    'name': 'حسام خندانی',
+                    'name': 'مدیر',
                     'password': 'placeholder'
                 }
             }
@@ -1071,5 +1067,3 @@ if st.session_state.get('authentication_status'):
 
     if __name__ == "__main__":
         main()
-
-
