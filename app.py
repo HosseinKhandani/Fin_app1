@@ -53,7 +53,7 @@ if not os.path.exists(config_path):
                 },
                 'h.khandani': {
                     'email': 'khandani@example.com',
-                    'name': 'حسام خندانی',
+                    'name': 'مدیر',
                     'password': 'placeholder'
                 }
             }
@@ -70,7 +70,8 @@ if not os.path.exists(config_path):
 with open('config.yaml', encoding='utf-8') as file:
     config = yaml.load(file, Loader=SafeLoader)
 
-hashed_passwords = stauth.Hasher(["elnagh", "abc_fin_cba","123"]).generate()
+# Hash passwords using the correct syntax for newer versions
+hashed_passwords = Hasher.hash_passwords(["elnagh", "abc_fin_cba", "123"])
 
 config['credentials']['usernames']['admin']['password'] = hashed_passwords[0]
 config['credentials']['usernames']['fin.analyst']['password'] = hashed_passwords[1]
