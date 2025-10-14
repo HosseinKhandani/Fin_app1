@@ -8,3 +8,5 @@ streamlit-authenticator
 google-generativeai
 pyyaml
 python-dotenv>=1.0.0
+bcrypt
+
