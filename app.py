@@ -536,7 +536,7 @@ if st.session_state.get('authentication_status'):
         }
         
         .info-item {
-            background: #f8f9fa;
+            background: #e8f7cf;
             padding: 1rem;
             border-radius: 12px;
             text-align: center;
@@ -589,7 +589,7 @@ if st.session_state.get('authentication_status'):
         
         .risk-card-critical {
             border-color: #d32f2f;
-            background: linear-gradient(135deg, #ffcdd2 0%, #ef5350 100%);
+            background: linear-gradient(#ef5350 100%);
         }
         
         .risk-card .info-label {
@@ -1250,3 +1250,4 @@ if st.session_state.get('authentication_status'):
 
     if __name__ == "__main__":
         main()
+
