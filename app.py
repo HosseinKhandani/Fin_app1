@@ -1,4 +1,140 @@
-import streamlit as st
+# ==================== DOWNLOAD SECTION ====================
+                    st.markdown("""
+                    <hr style="margin: 3rem 0; border: none; height: 2px; background: linear-gradient(90deg, transparent, #667eea, transparent);">
+                    """, unsafe_allow_html=True)
+                    
+                    st.markdown("""
+                    <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📥 دانلود نتایج</h3>
+                    """, unsafe_allow_html=True)
+                    
+                    def flatten_reference_data(df):
+                        """تابع برای تبدیل ستون ارجاع به ستون‌های جداگانه"""
+                        if 'ارجاع' in df.columns:
+                            df['شماره_بند'] = df['ارجاع'].apply(
+                                lambda x: x.get('شماره_بند', '') if isinstance(x, dict) else ''
+                            )
+                            df['شماره_صفحه'] = df['ارجاع'].apply(
+                                lambda x: x.get('شماره_صفحه', '') if isinstance(x, dict) else ''
+                            )
+                            df = df.drop('ارجاع', axis=1)
+                        return df
+                    
+                    def flatten_array_fields(df):
+                        """تابع برای تبدیل آرایه‌ها به رشته"""
+                        for col in df.columns:
+                            df[col] = df[col].apply(
+                                lambda x: ", ".join(x) if isinstance(x, list) else x
+                            )
+                        return df
+                    
+                    # Prepare comprehensive Excel data with all sections
+                    output = BytesIO()
+                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                        
+                        for filename, result in results:
+                            if 'error' in result:
+                                continue
+                            
+                            try:
+                                report = result["تحلیل_جامع_گزارش_حسابرسی"]
+                                
+                                # Get company info for sheet naming
+                                company_name = report["بخش۱_خلاصه_و_اطلاعات_کلیدی"]["نام_شرکت"]
+                                financial_year = report["بخش۱_خلاصه_و_اطلاعات_کلیدی"]["دوره_مالی"]
+                                
+                                # Extract year
+                                year_match = re.search(r'(\d{4})', financial_year)
+                                year = year_match.group(1) if year_match else "Unknown"
+                                
+                                # Clean company name
+                                clean_company = re.sub(r'[\\/:"*?<>|]+', "", company_name).strip()[:20]
+                                sheet_prefix = f"{clean_company}_{year}"
+                                
+                                # Section 1: خلاصه
+                                part1 = report["بخش۱_خلاصه_و_اطلاعات_کلیدی"]
+                                df1 = pd.DataFrame.from_dict({k: [v] if not isinstance(v, list) else [", ".join(v)] 
+                                                for k, v in part1.items()})
+                                sheet_name1 = f"{sheet_prefix}_خلاصه"[:31]
+                                df1.to_excel(writer, sheet_name=sheet_name1, index=False)
+                                
+                                # Section 2: تجزیه تحلیل
+                                if "بخش۲_تجزیه_تحلیل_گزارش" in report:
+                                    part2 = report["بخش۲_تجزیه_تحلیل_گزارش"]
+                                    
+                                    # Opinion section
+                                    if "بند_اظهارنظر" in part2:
+                                        df_opinion = pd.DataFrame([part2["بند_اظهارنظر"]])
+                                        sheet_name = f"{sheet_prefix}_اظهارنظر"[:31]
+                                        df_opinion.to_excel(writer, sheet_name=sheet_name, index=False)
+                                    
+                                    # Basis of opinion
+                                    if "بند_مبانی_اظهارنظر" in part2:
+                                        basis_data = part2["بند_مبانی_اظهارنظر"]
+                                        if basis_data.get("موضوعیت_دارد", False) and "موارد_مطرح_شده" in basis_data:
+                                            df_basis = pd.DataFrame(basis_data["موارد_مطرح_شده"])
+                                            df_basis = flatten_reference_data(df_basis)
+                                            df_basis = flatten_array_fields(df_basis)
+                                        else:
+                                            df_basis = pd.DataFrame([{"موضوعیت_دارد": False}])
+                                        sheet_name = f"{sheet_prefix}_مبانی"[:31]
+                                        df_basis.to_excel(writer, sheet_name=sheet_name, index=False)
+                                    
+                                    # Emphasis section
+                                    if "بند_تاکید_بر_مطالب_خاص" in part2:
+                                        emphasis_data = part2["بند_تاکید_بر_مطالب_خاص"]
+                                        if emphasis_data.get("موضوعیت_دارد", False) and "موارد_مطرح_شده" in emphasis_data:
+                                            df_emphasis = pd.DataFrame(emphasis_data["موارد_مطرح_شده"])
+                                            df_emphasis = flatten_reference_data(df_emphasis)
+                                            df_emphasis = flatten_array_fields(df_emphasis)
+                                        else:
+                                            df_emphasis = pd.DataFrame([{"موضوعیت_دارد": False}])
+                                        sheet_name = f"{sheet_prefix}_تاکید"[:31]
+                                        df_emphasis.to_excel(writer, sheet_name=sheet_name, index=False)
+                                    
+                                    # Legal compliance
+                                    if "گزارش_رعایت_الزامات_قانونی" in part2:
+                                        legal_data = part2["گزارش_رعایت_الزامات_قانونی"]
+                                        if legal_data.get("موضوعیت_دارد", False) and "تخلفات" in legal_data:
+                                            violations = legal_data["تخلفات"]
+                                            processed_violations = []
+                                            
+                                            for violation in violations:
+                                                processed_violation = violation.copy()
+                                                if "مبانی_قانونی_و_استانداردها" in processed_violation:
+                                                    processed_violation["مبانی_قانونی_و_استانداردها"] = ", ".join(
+                                                        processed_violation["مبانی_قانونی_و_استانداردها"]
+                                                    )
+                                                processed_violations.append(processed_violation)
+                                            
+                                            df_legal = pd.DataFrame(processed_violations)
+                                            df_legal = flatten_reference_data(df_legal)
+                                            df_legal = flatten_array_fields(df_legal)
+                                        else:
+                                            df_legal = pd.DataFrame([{"موضوعیت_دارد": False}])
+                                        sheet_name = f"{sheet_prefix}_قانونی"[:31]
+                                        df_legal.to_excel(writer, sheet_name=sheet_name, index=False)
+                                
+                                # Section 3: چک لیست
+                                if "بخش۳_چک_لیست_موضوعی" in report:
+                                    part3 = report["بخش۳_چک_لیست_موضوعی"]
+                                    df3 = pd.DataFrame(part3)
+                                    df3 = flatten_reference_data(df3)
+                                    df3 = flatten_array_fields(df3)
+                                    sheet_name = f"{sheet_prefix}_چک_لیست"[:31]
+                                    df3.to_excel(writer, sheet_name=sheet_name, index=False)
+                                
+                                # Adjust column widths for all sheets
+                                for sheet_name in writer.sheets:
+                                    worksheet = writer.sheets[sheet_name]
+                                    for column in worksheet.columns:
+                                        max_length = 0
+                                        column_letter = column[0].column_letter
+                                        for cell in column:
+                                            try:
+                                                if len(str(cell.value)) > max_length:
+                                                    max_length = len(str(cell.value))
+                                            except:
+                                                import streamlit as st
 import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
@@ -29,10 +165,9 @@ st.set_page_config(
 )
 
 api_keys = [
-    "AIzaSyDyj1DlOLAlbKzTLFP2tz95TcIca4oV0Vg",
     "AIzaSyAo5oFZqsTRkUIqJRjoefWINWpbwPHbEn8",
-    "AIzaSyBeLYGH4JS-fPHYdqKgUPotV2dpGZYZ2to"
-    
+    "AIzaSyBeLYGH4JS-fPHYdqKgUPotV2dpGZYZ2to",
+    "AIzaSyDyj1DlOLAlbKzTLFP2tz95TcIca4oV0Vg"
 ]
 
 # ==================== AUTHENTICATION CODE START ====================
@@ -537,7 +672,7 @@ if st.session_state.get('authentication_status'):
         }
         
         .info-item {
-            background: #b3e3db;
+            background: #f8f9fa;
             padding: 1rem;
             border-radius: 12px;
             text-align: center;
@@ -657,45 +792,326 @@ if st.session_state.get('authentication_status'):
                 "type": "object",
                 "properties": {
                     "تحلیل_جامع_گزارش_حسابرسی": {
+                    "type": "object",
+                    "description": "ساختار اصلی که تحلیل کامل گزارش حسابرس مستقل و بازرس قانونی را در خود جای می‌دهد.",
+                    "properties": {
+                        "بخش۱_خلاصه_و_اطلاعات_کلیدی": {
                         "type": "object",
+                        "description": "شامل اطلاعات اولیه گزارش و نتیجه‌گیری‌های اصلی در یک نگاه.",
                         "properties": {
-                            "بخش۱_خلاصه_و_اطلاعات_کلیدی": {
-                                "type": "object",
-                                "properties": {
-                                    "نام_شرکت": {"type": "string"},
-                                    "نام_حسابرس": {"type": "string"},
-                                    "دوره_مالی": {"type": "string"},
-                                    "نوع_اظهارنظر": {
-                                        "type": "string",
-                                        "enum": ["مقبول", "مشروط", "مردود", "عدم اظهارنظر"]
-                                    },
-                                    "سطح_ریسک_کلی_بنا_به_نظر_بازرس": {
-                                        "type": "string",
-                                        "enum": ["پایین", "متوسط", "بالا", "بحرانی"]
-                                    },
-                                    "سطح_ریسک_کلی_بنا_به_نظر_مدل_زبانی": {
-                                        "type": "string",
-                                        "enum": ["پایین", "متوسط", "بالا", "بحرانی"]
-                                    },
-                                    "جزییات_سطح_ریسک_تعیین_شده_توسط_مدل": {"type": "string"},
-                                    "نکات_کلیدی_و_نتیجه_گیری": {
-                                        "type": "array",
-                                        "items": {"type": "string"}
-                                    }
+                            "نام_شرکت": {
+                            "type": "string",
+                            "description": "نام کامل شرکت از روی جلد گزارش."
+                            },
+                            "نام_حسابرس": {
+                            "type": "string",
+                            "description": "نام موسسه حسابرسی."
+                            },
+                            "دوره_مالی": {
+                            "type": "string",
+                            "description": "دوره مالی مورد رسیدگی، مثلا: 'سال مالی منتهی به ۲۹ اسفند ۱۳۹۸'."
+                            },
+                            "نوع_اظهارنظر": {
+                            "type": "string",
+                            "description": "یکی از موارد: مقبول، مشروط، مردود، عدم اظهارنظر.",
+                            "enum": [
+                                "مقبول",
+                                "مشروط",
+                                "مردود",
+                                "عدم اظهارنظر"
+                            ]
+                            },
+                            "سطح_ریسک_کلی_بنا_به_گزارش": {
+                            "type": "string",
+                            "description": "سطح ریسک کلی استنباط شده از گزارش حسابرس مستقل و بازرس قانونی بنا به متن گزارش و شواهد و آماره های بیان شده از دیدگاه حسابرسی",
+                            "enum": [
+                                "پایین",
+                                "متوسط",
+                                "بالا",
+                                "بحرانی"
+                            ]
+                            },
+                            "جزییات_سطح_ریسک_تعیین_شده": {
+                            "type": "string",
+                            "description": " جزییات و دلیل سطح ریسک کلی استنباط شده از گزارش ."
+                            },
+                            "نکات_کلیدی_و_نتیجه_گیری": {
+                            "type": "array",
+                            "description": "آرایه‌ای از ۳ رشته شامل مهم‌ترین یافته‌ها و نتیجه‌گیری‌ها.",
+                            "items": {
+                                "type": "string"
+                            }
+                            }
+                        },
+                        "required": [
+                            "نام_شرکت",
+                            "نام_حسابرس",
+                            "دوره_مالی",
+                            "نوع_اظهارنظر",
+                            "سطح_ریسک_کلی_بنا_به_گزارش",
+                            "جزییات_سطح_ریسک_تعیین_شده",
+                            "نکات_کلیدی_و_نتیجه_گیری"
+                        ]
+                        },
+                        "بخش۲_تجزیه_تحلیل_گزارش": {
+                        "type": "object",
+                        "description": "تجزیه و تحلیل ساختاریافته متن گزارش، بند به بند.",
+                        "properties": {
+                            "بند_اظهارنظر": {
+                            "type": "object",
+                            "properties": {
+                                "نوع": {
+                                "type": "string"
                                 },
-                                "required": ["نام_شرکت", "نام_حسابرس", "دوره_مالی", "نوع_اظهارنظر", 
-                                           "سطح_ریسک_کلی_بنا_به_نظر_بازرس", "سطح_ریسک_کلی_بنا_به_نظر_مدل_زبانی",
-                                           "جزییات_سطح_ریسک_تعیین_شده_توسط_مدل", "نکات_کلیدی_و_نتیجه_گیری"]
+                                "خلاصه_دلایل": {
+                                "type": "string"
+                                }
+                            },
+                            "required": [
+                                "نوع",
+                                "خلاصه_دلایل"
+                            ]
+                            },
+                            "بند_مبانی_اظهارنظر": {
+                            "type": "object",
+                            "properties": {
+                                "موضوعیت_دارد": {
+                                "type": "boolean"
+                                },
+                                "موارد_مطرح_شده": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                    "شماره_مورد": {
+                                        "type": "integer"
+                                    },
+                                    "عنوان": {
+                                        "type": "string"
+                                    },
+                                    "شرح": {
+                                        "type": "string"
+                                    },
+                                    "نوع_دلیل": {
+                                        "type": "string",
+                                        "enum": [
+                                        "محدودیت در رسیدگی",
+                                        "انحراف از استانداردهای حسابداری",
+                                        "سایر"
+                                        ]
+                                    }
+                                    },
+                                    "required": [
+                                    "شماره_مورد",
+                                    "عنوان",
+                                    "شرح",
+                                    "نوع_دلیل"
+                                    ]
+                                }
+                                }
+                            },
+                            "required": [
+                                "موضوعیت_دارد"
+                            ]
+                            },
+                            "بند_تاکید_بر_مطالب_خاص": {
+                            "type": "object",
+                            "properties": {
+                                "موضوعیت_دارد": {
+                                "type": "boolean"
+                                },
+                                "موارد_مطرح_شده": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                    "ارجاع": {
+                                        "type": "object",
+                                        "description": "ارجاع به شماره بند و صفحه مربوطه در گزارش اصلی.",
+                                        "properties": {
+                                            "شماره_بند": {
+                                            "type": "string",
+                                            "description": "شماره بند مربوطه در گزارش حسابرس مستقل و بازرس قانونی .بین بند ها , قرار بده مانند ۲,۶"
+                                        },
+                                        "شماره_صفحه": {
+                                            "type": "string",
+                                            "description": "شماره صفحه مربوطه در گزارش حسابرس مستقل و بازرس قانونی.چنانچه این مورد در چند بند به ان اشاره شده صفحات منطبق با بند را به ترتیب بند برگردان بین صفحات , قرار بده مانند ۱,۵"
+                                        }
+                                        },
+                                        "required": [
+                                        "شماره_بند",
+                                        "شماره_صفحه"
+                                        ]
+                                    },
+                                    "عنوان": {
+                                        "type": "string"
+                                    },
+                                    "شرح": {
+                                        "type": "string"
+                                    },
+                                    "ریسک_برجسته_شده": {
+                                        "type": "string"
+                                    }
+                                    },
+                                    "required": [
+                                    "ارجاع",
+                                    "عنوان",
+                                    "شرح",
+                                    "ریسک_برجسته_شده"
+                                    ]
+                                }
+                                }
+                            },
+                            "required": [
+                                "موضوعیت_دارد"
+                            ]
+                            },
+                            "گزارش_رعایت_الزامات_قانونی": {
+                            "type": "object",
+                            "properties": {
+                                "موضوعیت_دارد": {
+                                "type": "boolean"
+                                },
+                                "تخلفات": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                    "ارجاع": {
+                                        "type": "object",
+                                        "description":  "ارجاع به شماره بند و صفحه مربوطه در گزارش اصلی.",
+                                        "properties": {
+                                            "شماره_بند": {
+                                            "type": "string",
+                                            "description": "شماره بند مربوطه در گزارش حسابرس مستقل و بازرس قانونی .بین بند ها , قرار بده مانند ۲,۶"
+                                        },
+                                        "شماره_صفحه": {
+                                            "type": "string",
+                                            "description": "شماره صفحه مربوطه در گزارش حسابرس مستقل و بازرس قانونی.چنانچه این مورد در چند بند به ان اشاره شده صفحات منطبق با بند را به ترتیب بند برگردان بین صفحات , قرار بده مانند ۱,۵"
+                                        }
+                                        },
+                                        "required": [
+                                        "شماره_بند",
+                                        "شماره_صفحه"
+                                        ]
+                                    },
+                                    "عنوان_تخلف": {
+                                        "type": "string"
+                                    },
+                                    "شرح": {
+                                        "type": "string"
+                                    },
+                                    "مبانی_قانونی_و_استانداردها": {
+                                        "type": "array",
+                                        "items": {
+                                        "type": "string",
+                                        "enum": [
+                                            "قانون پولی و بانکی کشور",
+                                            "قانون عملیات بانکی بدون رباً",
+                                            "آیین نامه ها و دستورالعملهای بانک مرکزی (مهمترین بخش)",
+                                            "اساسنامه بانک",
+                                            "قانون تجارت (در موارد مرتبط)",
+                                            "استانداردهای حسابداری",
+                                            "استانداردهای حسابرسی"
+                                        ]
+                                        }
+                                    }
+                                    },
+                                    "required": [
+                                    "ارجاع",
+                                    "عنوان_تخلف",
+                                    "شرح",
+                                    "مبانی_قانونی_و_استانداردها"
+                                    ]
+                                }
+                                }
+                            },
+                            "required": [
+                                "موضوعیت_دارد"
+                            ]
                             }
                         }
+                        },
+                        "بخش۳_چک_لیست_موضوعی": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                            "موضوع": {
+                                "type": "string",
+                                "enum": [
+                                "کفایت سرمایه",
+                                "تسعیر ارز و عملیات خارجی",
+                                "مالیات و جرائم مالیاتی",
+                                "تجدید ارزیابی دارایی‌های ثابت و نامشهود",
+                                "تعهدات ارزی و اختلاف با بانک مرکزی",
+                                "تهاتر(Barter)",
+                                "عدم دریافت تأییدیه‌های حسابداری",
+                                "مغایرت‌های حساب جاری بانک مرکزی",
+                                "نسبت کفایت سرمایه",
+                                "نسبت ها در چارچوب بازل(bazel Accords)",
+                                "(Facilities and Credits)تسهیلات و اعتبارات",
+                                "سود سهام دولت",
+                                "پروژه‌های اجرایی ناتمام",
+                                "معاملات با اشخاص وابسته",
+                                "ذخیره گیری"
+                                ]
+                            },
+                            "در_گزارش_آمده": {
+                                "type": "boolean"
+                            },
+                            "وضعیت": {
+                                "type": "string",
+                                "enum": [
+                                "مصداق ندارد",
+                                "بررسی شده - ریسک خاصی گزارش نشده",
+                                "مسئله کلیدی منجر به اظهارنظر مشروط",
+                                "ریسک بحرانی"
+                                ]
+                            },
+                            "جزئیات": {
+                                "type": "string"
+                            },
+                            "ارجاع": {
+                                "type": "object",
+                                "description": "ارجاع به شماره بند و صفحه مربوطه در گزارش اصلی.",    
+                                "properties": {
+                                "شماره_بند": {
+                                    "type": "string",
+                                    "description": "شماره بند مربوطه در گزارش حسابرس مستقل و بازرس قانونی .بین بند ها , قرار بده مانند ۲,۶"
+                                },
+                                "شماره_صفحه": {
+                                    "type": "string",
+                                    "description": "شماره صفحه مربوطه در گزارش حسابرس مستقل و بازرس قانونی.چنانچه این مورد در چند بند به ان اشاره شده صفحات منطبق با بند را به ترتیب بند برگردان بین صفحات , قرار بده مانند ۱,۵"
+                                }
+                                }
+                            }
+                            },
+                            "required": [
+                            "موضوع",
+                            "در_گزارش_آمده",
+                            "وضعیت",
+                            "جزئیات",
+                            "ارجاع"
+                            ]
+                        }
+                        }
+                    }
                     }
                 },
-                "required": ["تحلیل_جامع_گزارش_حسابرسی"]
-            }
+                "required": [
+                    "تحلیل_جامع_گزارش_حسابرسی"
+                ]
+                }
         
         def extract_table_from_page(self, file_content):
+            """Extract analysis from PDF using Gemini API"""
             client = get_client()
-            prompt = """لطفاً گزارش حسابرسی را تحلیل کنید."""
+            
+            prompt = """
+            لطفاً گزارش حسابرس مستقل و بازرس قانونی ارائه شده را تحلیل کنید و اطلاعات را طبق ساختار JSON مشخص شده استخراج کنید.
+            تمام فیلدهای required را با دقت تکمیل کنید و از enum های تعریف شده استفاده کنید.
+            """
             
             response = client.models.generate_content(
                 model="gemini-2.5-pro",
@@ -704,7 +1120,9 @@ if st.session_state.get('authentication_status'):
                     prompt
                 ],
                 config={
-                    'system_instruction': """شما یک تحلیلگر مالی خبره هستید.""",
+                    'system_instruction': """
+                    شما به عنوان یک تحلیلگر مالی و حسابرس خبره عمل می‌کنید. وظیفه شما تحلیل گزارش حسابرس مستقل و بازرس قانونی آن است . دقت کن که در تحلیل ها و ارجاعات به صفحات و بندها از گزارش حسابرس مستقل و بازرس قانونی استفاده کن و به متن صورتمالی مراجعه نکن , لطفاً تمام فیلدها را با دقت و بر اساس اطلاعات موجود در سند تکمیل کنید
+                    """,
                     "response_mime_type": "application/json",
                     "response_schema": self.response_schema,
                     "temperature": 0.5
@@ -1354,5 +1772,3 @@ if st.session_state.get('authentication_status'):
 
     if __name__ == "__main__":
         main()
-
-
