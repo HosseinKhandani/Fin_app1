@@ -92,15 +92,11 @@ if 'authentication_status' not in st.session_state:
 
 if st.session_state.authentication_status is None:
     try:
-        # Try newer version syntax
         authenticator.login()
-        
-        # Check if authentication happened
         if st.session_state.get("authentication_status"):
             st.session_state.name = st.session_state.get("name")
             st.session_state.username = st.session_state.get("username")
     except TypeError:
-        # Fallback for older version
         try:
             name, authentication_status, username = authenticator.login('main')
             st.session_state.authentication_status = authentication_status
@@ -176,8 +172,6 @@ if st.session_state.get('authentication_status'):
             direction: rtl;
         }
         
-        /* ==================== TABS STYLING ==================== */
-        
         .stTabs {
             background: white;
             border-radius: 20px;
@@ -216,8 +210,6 @@ if st.session_state.get('authentication_status'):
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
         
-        /* ==================== HEADER STYLING ==================== */
-        
         .main-header {
             background: white;
             padding: 2.5rem;
@@ -255,8 +247,6 @@ if st.session_state.get('authentication_status'):
             margin-top: 0.5rem;
             text-align: center;
         }
-        
-        /* ==================== ALERT BOXES ==================== */
         
         .alert-box {
             border-radius: 15px;
@@ -313,8 +303,6 @@ if st.session_state.get('authentication_status'):
             font-size: 1rem;
         }
         
-        /* ==================== METRIC CARDS ==================== */
-        
         .modern-metric {
             background: white;
             border-radius: 18px;
@@ -363,8 +351,6 @@ if st.session_state.get('authentication_status'):
             letter-spacing: 1px;
         }
         
-        /* ==================== FILE UPLOAD AREA ==================== */
-        
         .upload-zone {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             border: 3px dashed #667eea;
@@ -404,8 +390,6 @@ if st.session_state.get('authentication_status'):
             color: #6c757d;
             font-size: 1rem;
         }
-        
-        /* ==================== FILE LIST ==================== */
         
         .file-card {
             background: white;
@@ -458,8 +442,6 @@ if st.session_state.get('authentication_status'):
             color: white;
         }
         
-        /* ==================== BUTTONS ==================== */
-        
         .stButton > button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -481,14 +463,10 @@ if st.session_state.get('authentication_status'):
             box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
         }
         
-        /* ==================== PROGRESS BAR ==================== */
-        
         .stProgress > div > div > div {
             background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
             border-radius: 10px;
         }
-        
-        /* ==================== RESULTS CARD ==================== */
         
         .result-card {
             background: white;
@@ -578,8 +556,6 @@ if st.session_state.get('authentication_status'):
             font-weight: 700;
         }
         
-        /* ==================== NAVIGATION HELPER ==================== */
-        
         .nav-helper {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -607,12 +583,10 @@ if st.session_state.get('authentication_status'):
             opacity: 0.95;
         }
         
-        /* Hide Streamlit elements */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         header {visibility: hidden;}
         
-        /* RTL Fixes */
         .stFileUploader > div {
             direction: rtl !important;
         }
@@ -694,38 +668,14 @@ if st.session_state.get('authentication_status'):
             
             return json.loads(response.text)
 
-    # ==================== HELPER FUNCTIONS ====================
-    
-    def flatten_reference_data(df):
-        if 'ارجاع' in df.columns:
-            df['شماره_بند'] = df['ارجاع'].apply(
-                lambda x: x.get('شماره_بند', '') if isinstance(x, dict) else ''
-            )
-            df['شماره_صفحه'] = df['ارجاع'].apply(
-                lambda x: x.get('شماره_صفحه', '') if isinstance(x, dict) else ''
-            )
-            df = df.drop('ارجاع', axis=1)
-        return df
-    
-    def flatten_array_fields(df):
-        for col in df.columns:
-            df[col] = df[col].apply(
-                lambda x: ", ".join(x) if isinstance(x, list) else x
-            )
-        return df
-
     # ==================== MAIN APPLICATION ====================
 
     def main():
-        # Initialize session state
         if 'uploaded_files' not in st.session_state:
             st.session_state.uploaded_files = None
         if 'results' not in st.session_state:
             st.session_state.results = None
-        if 'current_tab' not in st.session_state:
-            st.session_state.current_tab = 0
         
-        # Header
         st.markdown("""
         <div class="main-header">
             <h1 class="main-title">📊 سیستم تحلیل هوشمند صورت‌های مالی</h1>
@@ -733,10 +683,8 @@ if st.session_state.get('authentication_status'):
         </div>
         """, unsafe_allow_html=True)
         
-        # Create tabs
         tab1, tab2 = st.tabs(["📁 بارگذاری فایل", "⚙️ پردازش و نتایج"])
         
-        # ==================== TAB 1: FILE UPLOAD ====================
         with tab1:
             st.markdown("""
             <div class="alert-box alert-info">
@@ -748,17 +696,10 @@ if st.session_state.get('authentication_status'):
                         <li>✅ فایل‌های ZIP حاوی چندین PDF</li>
                         <li>✅ حداکثر حجم هر فایل: 50 مگابایت</li>
                     </ul>
-                    <p><strong>استانداردهای مورد نیاز:</strong></p>
-                    <ul>
-                        <li>🔹 فایل‌ها باید شامل گزارش حسابرس مستقل باشند</li>
-                        <li>🔹 صورت‌های مالی پیوست باید واضح و خوانا باشند</li>
-                        <li>🔹 در صورت اسکن، رزولوشن حداقل 300 DPI توصیه می‌شود</li>
-                    </ul>
                 </div>
             </div>
             """, unsafe_allow_html=True)
             
-            # Upload method selection
             col1, col2 = st.columns(2)
             with col1:
                 upload_method = st.radio(
@@ -767,14 +708,12 @@ if st.session_state.get('authentication_status'):
                     horizontal=False
                 )
             
-            # File upload
             uploaded_files = None
             if upload_method == "📄 فایل‌های جداگانه":
                 st.markdown("""
                 <div class="upload-zone">
                     <div class="upload-icon">📁</div>
                     <div class="upload-title">فایل‌های PDF را بارگذاری کنید</div>
-                    <div class="upload-subtitle">می‌توانید چندین فایل را همزمان انتخاب کنید</div>
                 </div>
                 """, unsafe_allow_html=True)
                 
@@ -789,7 +728,6 @@ if st.session_state.get('authentication_status'):
                 <div class="upload-zone">
                     <div class="upload-icon">📦</div>
                     <div class="upload-title">فایل ZIP را بارگذاری کنید</div>
-                    <div class="upload-subtitle">فایل ZIP باید شامل فایل‌های PDF باشد</div>
                 </div>
                 """, unsafe_allow_html=True)
                 
@@ -825,11 +763,9 @@ if st.session_state.get('authentication_status'):
                         </div>
                         """, unsafe_allow_html=True)
             
-            # Display uploaded files
             if uploaded_files:
                 st.session_state.uploaded_files = uploaded_files
                 
-                # File statistics
                 st.markdown("""
                 <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📊 آمار فایل‌های بارگذاری شده</h3>
                 """, unsafe_allow_html=True)
@@ -868,7 +804,6 @@ if st.session_state.get('authentication_status'):
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # File list
                 st.markdown("""
                 <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📋 لیست فایل‌ها</h3>
                 """, unsafe_allow_html=True)
@@ -894,53 +829,40 @@ if st.session_state.get('authentication_status'):
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # Navigation helper
                 st.markdown("""
                 <div class="nav-helper">
                     <div class="nav-helper-title">🎯 مرحله بعدی</div>
                     <div class="nav-helper-text">برای شروع تحلیل و مشاهده نتایج، به تب "پردازش و نتایج" بروید ⬅️</div>
                 </div>
                 """, unsafe_allow_html=True)
-            
             else:
                 st.markdown("""
                 <div class="alert-box alert-warning">
                     <div class="alert-title">⚠️ هنوز فایلی بارگذاری نشده</div>
-                    <div class="alert-content">لطفاً فایل‌های PDF خود را بارگذاری کنید تا بتوانید به مرحله بعد بروید</div>
+                    <div class="alert-content">لطفاً فایل‌های PDF خود را بارگذاری کنید</div>
                 </div>
                 """, unsafe_allow_html=True)
         
-        # ==================== TAB 2: PROCESSING & RESULTS ====================
         with tab2:
             if not st.session_state.uploaded_files:
                 st.markdown("""
                 <div class="alert-box alert-warning">
                     <div class="alert-title">⚠️ فایلی برای پردازش وجود ندارد</div>
-                    <div class="alert-content">
-                        <p>لطفاً ابتدا به تب "بارگذاری فایل" بروید و فایل‌های خود را بارگذاری کنید</p>
-                    </div>
+                    <div class="alert-content">لطفاً ابتدا به تب "بارگذاری فایل" بروید</div>
                 </div>
                 """, unsafe_allow_html=True)
             else:
-                # ==================== PROCESSING SECTION ====================
                 st.markdown("""
                 <div class="alert-box alert-info">
                     <div class="alert-title">🤖 تحلیل هوشمند با AI</div>
                     <div class="alert-content">
-                        <p>سیستم از مدل‌های پیشرفته هوش مصنوعی برای تحلیل گزارش‌های حسابرسی استفاده می‌کند:</p>
                         <ul>
                             <li>🔍 استخراج خودکار اطلاعات کلیدی</li>
                             <li>📊 ارزیابی سطح ریسک</li>
                             <li>📋 تحلیل بند به بند گزارش</li>
-                            <li>⚠️ شناسایی تخلفات و مسائل قانونی</li>
                         </ul>
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
-                
-                # Processing summary
-                st.markdown("""
-                <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📊 خلاصه پردازش</h3>
                 """, unsafe_allow_html=True)
                 
                 col1, col2, col3 = st.columns(3)
@@ -960,12 +882,12 @@ if st.session_state.get('authentication_status'):
                     <div class="modern-metric" style="--gradient-start: #f093fb; --gradient-end: #f5576c;">
                         <div class="metric-icon">⏱️</div>
                         <div class="metric-value">{estimated_time}</div>
-                        <div class="metric-label">ثانیه (تخمینی)</div>
+                        <div class="metric-label">ثانیه</div>
                     </div>
                     """, unsafe_allow_html=True)
                 
                 with col3:
-                    st.markdown(f"""
+                    st.markdown("""
                     <div class="modern-metric" style="--gradient-start: #4facfe; --gradient-end: #00f2fe;">
                         <div class="metric-icon">🤖</div>
                         <div class="metric-value">AI</div>
@@ -973,17 +895,9 @@ if st.session_state.get('authentication_status'):
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # Process button
                 if st.button("🚀 شروع تحلیل", type="primary", key="start_analysis"):
                     analyzer = FinancialAnalyzer()
                     results = []
-                    
-                    st.markdown("""
-                    <div class="alert-box alert-info">
-                        <div class="alert-title">⏳ در حال پردازش...</div>
-                        <div class="alert-content">لطفاً صبر کنید، این عملیات ممکن است چند دقیقه طول بکشد</div>
-                    </div>
-                    """, unsafe_allow_html=True)
                     
                     progress_bar = st.progress(0)
                     status_text = st.empty()
@@ -1009,23 +923,9 @@ if st.session_state.get('authentication_status'):
                             result = analyzer.extract_table_from_page(file_content)
                             results.append((filename, result))
                             
-                            status_text.markdown(f"""
-                            <div class="alert-box alert-success">
-                                <div class="alert-title">✅ تحلیل موفق</div>
-                                <div class="alert-content">{filename}</div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            
                         except Exception as e:
                             error_result = {"error": f"خطا: {str(e)}"}
                             results.append((filename, error_result))
-                            
-                            status_text.markdown(f"""
-                            <div class="alert-box alert-danger">
-                                <div class="alert-title">❌ خطا در تحلیل</div>
-                                <div class="alert-content">{filename}: {str(e)}</div>
-                            </div>
-                            """, unsafe_allow_html=True)
                         
                         progress_bar.progress((i + 1) / total_files)
                     
@@ -1038,18 +938,12 @@ if st.session_state.get('authentication_status'):
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # ==================== RESULTS SECTION ====================
                 if st.session_state.results:
                     st.markdown("""
                     <hr style="margin: 3rem 0; border: none; height: 2px; background: linear-gradient(90deg, transparent, #667eea, transparent);">
                     """, unsafe_allow_html=True)
                     
                     results = st.session_state.results
-                    
-                    # Results summary
-                    st.markdown("""
-                    <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📊 خلاصه نتایج</h3>
-                    """, unsafe_allow_html=True)
                     
                     successful = sum(1 for _, result in results if 'error' not in result)
                     failed = len(results) - successful
@@ -1093,7 +987,6 @@ if st.session_state.get('authentication_status'):
                         </div>
                         """, unsafe_allow_html=True)
                     
-                    # Results details
                     st.markdown("""
                     <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📋 جزئیات نتایج</h3>
                     """, unsafe_allow_html=True)
@@ -1173,107 +1066,9 @@ if st.session_state.get('authentication_status'):
                                     <div class="result-header">
                                         <div class="result-title">✅ {filename}</div>
                                     </div>
-                                    <div class="alert-content">تحلیل موفق - اطلاعات جزئی در دسترس نیست</div>
+                                    <div class="alert-content">تحلیل موفق</div>
                                 </div>
                                 """, unsafe_allow_html=True)
-                    
-                    # Download Excel
-                    st.markdown("""
-                    <h3 style="color: #2c3e50; margin: 3rem 0 1rem 0;">📥 دانلود گزارشات</h3>
-                    """, unsafe_allow_html=True)
-                    
-                    if st.button("📊 تبدیل به Excel و دانلود", type="primary", key="download_excel"):
-                        st.markdown("""
-                        <div class="alert-box alert-info">
-                            <div class="alert-title">⏳ در حال ایجاد فایل‌های Excel...</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                        st.markdown("""
-                        <div class="alert-box alert-success">
-                            <div class="alert-title">✅ فایل‌های Excel آماده دانلود هستند</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                                'پایین': 'risk-low',
-                                'متوسط': 'risk-medium',
-                                'بالا': 'risk-high',
-                                'بحرانی': 'risk-critical'
-                            }
-                            risk_class = risk_classes.get(risk_level, 'risk-low')
-                            
-                            risk_icons = {
-                                'پایین': '🟢',
-                                'متوسط': '🟡',
-                                'بالا': '🟠',
-                                'بحرانی': '🔴'
-                            }
-                            risk_icon = risk_icons.get(risk_level, '⚪')
-                            
-                            risk_colors = {
-                                'پایین': '#4caf50',
-                                'متوسط': '#ff9800',
-                                'بالا': '#ff5722',
-                                'بحرانی': '#f44336'
-                            }
-                            border_color = risk_colors.get(risk_level, '#4caf50')
-                            
-                            st.markdown(f"""
-                            <div class="result-card" style="border-top-color: {border_color};">
-                                <div class="result-header">
-                                    <div class="result-title">✅ {filename}</div>
-                                    <div class="risk-badge {risk_class}">{risk_icon} {risk_level}</div>
-                                </div>
-                                <div class="info-grid">
-                                    <div class="info-item">
-                                        <div class="info-label">🏢 نام شرکت</div>
-                                        <div class="info-value">{company_name}</div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">📅 دوره مالی</div>
-                                        <div class="info-value">{financial_year}</div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">👨‍💼 حسابرس</div>
-                                        <div class="info-value">{auditor_name}</div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">📋 نوع اظهارنظر</div>
-                                        <div class="info-value">{opinion_type}</div>
-                                    </div>
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                        except:
-                            st.markdown(f"""
-                            <div class="result-card" style="border-top-color: #4caf50;">
-                                <div class="result-header">
-                                    <div class="result-title">✅ {filename}</div>
-                                </div>
-                                <div class="alert-content">تحلیل موفق - اطلاعات جزئی در دسترس نیست</div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                
-                # Download Excel
-                st.markdown("""
-                <h3 style="color: #2c3e50; margin: 3rem 0 1rem 0;">📥 دانلود گزارشات</h3>
-                """, unsafe_allow_html=True)
-                
-                if st.button("📊 تبدیل به Excel و دانلود", type="primary"):
-                    st.markdown("""
-                    <div class="alert-box alert-info">
-                        <div class="alert-title">⏳ در حال ایجاد فایل‌های Excel...</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    st.markdown("""
-                    <div class="alert-box alert-success">
-                        <div class="alert-title">✅ فایل‌های Excel آماده دانلود هستند</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                        <div class="alert-box alert-success">
-                            <div class="alert-title">✅ فایل‌های Excel آماده دانلود هستند</div>
-                        </div>
-                        """, unsafe_allow_html=True)
 
     if __name__ == "__main__":
         main()
