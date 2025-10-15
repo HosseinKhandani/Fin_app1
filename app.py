@@ -2,7 +2,6 @@ import streamlit as st
 import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
-from streamlit_authenticator.utilities.hasher import Hasher
 import json
 import pandas as pd
 from PyPDF2 import PdfReader, PdfWriter
@@ -18,19 +17,14 @@ import re
 from typing import List, Dict, Any, Tuple
 import base64
 from io import BytesIO
-import yaml
-from yaml.loader import SafeLoader
 
-
-
-    # Page configuration
+# Page configuration
 st.set_page_config(
-        page_title="AI Financial Analyzer",
-        page_icon="📊",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
-
+    page_title="AI Financial Analyzer",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 api_keys = [
     "AIzaSyAo5oFZqsTRkUIqJRjoefWINWpbwPHbEn8",
@@ -40,23 +34,15 @@ api_keys = [
 
 # ==================== AUTHENTICATION CODE START ====================
 
-
 with open('config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
 
-hashed_passwords = stauth.Hasher(["elnagh", "abc_fin_cba","123"]).generate()
-
-# Update config with hashed passwords
-config['credentials']['usernames']['admin']['password'] = hashed_passwords[0]
-config['credentials']['usernames']['fin.analyst']['password'] = hashed_passwords[1]
-config['credentials']['usernames']['h.khandani']['password'] = hashed_passwords[2]
-
-authenticator =stauth.Authenticate(
+# Initialize authenticator with config from YAML
+authenticator = stauth.Authenticate(
     config['credentials'],
     config['cookie']['name'],
     config['cookie']['key'],
-    config['cookie']['expiry_days'],
-   
+    config['cookie']['expiry_days']
 )
 
 # Authentication check
@@ -85,7 +71,6 @@ if st.session_state.authentication_status:
     # ==================== CUSTOM SIDEBAR WITH ONLY GUIDE BOX AND LOGOUT ====================
     
     with st.sidebar:
-        # st.sidebar.write(f'Welcome *{st.session_state.name}*')
         # Guide box (راهنما)
         st.markdown("""
         <div class="guide-box">
@@ -114,7 +99,7 @@ if st.session_state.authentication_status:
     
     # ==================== AUTHENTICATION CODE END ====================
     
-# Enhanced CSS with modern colors and RTL support
+    # Enhanced CSS with modern colors and RTL support
     st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -243,8 +228,8 @@ if st.session_state.authentication_status:
         }
         
         .stTextInput > div > div > input:focus {
-            border-color: #4A90E2 !important;
-            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1) !important;
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
         }
         
         /* Login form labels */
@@ -258,7 +243,7 @@ if st.session_state.authentication_status:
         
         /* Login button */
         .stForm .stButton > button {
-            background: linear-gradient(135deg, #4A90E2, #357ABD) !important;
+            background: linear-gradient(135deg, #667eea, #764ba2) !important;
             color: white !important;
             border: none !important;
             border-radius: 8px !important;
@@ -268,13 +253,13 @@ if st.session_state.authentication_status:
             width: 100% !important;
             margin-top: 1rem !important;
             transition: all 0.3s ease !important;
-            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3) !important;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
         }
         
         .stForm .stButton > button:hover {
-            background: linear-gradient(135deg, #357ABD, #2E6DA4) !important;
+            background: linear-gradient(135deg, #764ba2, #f093fb) !important;
             transform: translateY(-2px) !important;
-            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4) !important;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
         }
         
         /* ==================== SIDEBAR STYLING - ONLY GUIDE BOX AND LOGOUT ==================== */
@@ -295,7 +280,7 @@ if st.session_state.authentication_status:
             border-radius: 12px !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important;
             margin-bottom: 2rem !important;
-            border-right: 4px solid #4A90E2 !important;
+            border-right: 4px solid #667eea !important;
             direction: rtl !important;
         }
         
@@ -408,7 +393,7 @@ if st.session_state.authentication_status:
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             margin-bottom: 2rem;
             text-align: center !important;
-            border-right: 5px solid #4A90E2;
+            border-right: 5px solid #667eea;
             direction: rtl;
             display: flex;
             flex-direction: column;
@@ -419,7 +404,9 @@ if st.session_state.authentication_status:
         .main-title {
             font-size: 2.5rem;
             font-weight: 700;
-            color: #2C3E50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             margin: 0;
             margin-bottom: 0.5rem;
             text-align: center !important;
@@ -435,21 +422,29 @@ if st.session_state.authentication_status:
             margin-right: auto;
         }
         
-        /* Card Styles */
+        /* Card Styles with Modern Colors */
         .content-card {
             background: white;
             padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
             margin-bottom: 2rem;
-            border: 1px solid #E8E8E8;
+            border: none;
             direction: rtl;
+            transition: all 0.3s ease;
+        }
+        
+        .content-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.2);
         }
         
         .section-title {
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: #2C3E50;
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
@@ -475,7 +470,7 @@ if st.session_state.authentication_status:
         }
         
         .upload-text {
-            color: #4A90E2;
+            color: #667eea;
             font-size: 1.1rem;
             font-weight: 500;
             margin-bottom: 0.5rem;
@@ -488,7 +483,7 @@ if st.session_state.authentication_status:
             text-align: center;
         }
         
-        /* Centered Metrics */
+        /* Modern Metrics with Gradient */
         .metric-container {
             display: flex;
             gap: 1rem;
@@ -498,29 +493,36 @@ if st.session_state.authentication_status:
         
         .metric-card {
             flex: 1;
-            background: linear-gradient(135deg, #4A90E2, #357ABD);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center !important;
+            transition: all 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
         }
         
         .metric-title {
-            font-size: 0.9rem;
-            opacity: 0.9;
+            font-size: 1rem;
+            opacity: 0.95;
             margin-bottom: 0.5rem;
             text-align: center !important;
             display: block;
             width: 100%;
+            font-weight: 500;
         }
         
         .metric-value {
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: 700;
             text-align: center !important;
             display: block;
@@ -529,7 +531,7 @@ if st.session_state.authentication_status:
         
         /* Risk Level Background Colors */
         .risk-low {
-            background: linear-gradient(135deg, #27AE60, #2ECC71) !important;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
         }
         
         .risk-medium {
@@ -546,7 +548,7 @@ if st.session_state.authentication_status:
         
         /* Status Messages */
         .status-success {
-            background: linear-gradient(135deg, #27AE60, #2ECC71);
+            background: linear-gradient(135deg, #11998e, #38ef7d);
             color: white;
             padding: 1rem 1.5rem;
             border-radius: 8px;
@@ -579,7 +581,7 @@ if st.session_state.authentication_status:
         }
         
         .status-info {
-            background: linear-gradient(135deg, #3498DB, #2980B9);
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
             padding: 1rem 1.5rem;
             border-radius: 8px;
@@ -599,25 +601,25 @@ if st.session_state.authentication_status:
             direction: rtl;
         }
         
-        /* Buttons */
+        /* Modern Buttons with Gradient */
         .stButton > button {
-            background: linear-gradient(135deg, #4A90E2, #357ABD);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 8px;
-            padding: 0.75rem 2rem;
+            border-radius: 12px;
+            padding: 1rem 2.5rem;
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 1.1rem;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
             width: 100%;
             font-family: 'B Mitra', 'Tahoma', sans-serif !important;
         }
         
         .stButton > button:hover {
-            background: linear-gradient(135deg, #357ABD, #2E6DA4);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+            background: linear-gradient(135deg, #764ba2 0%, #f093fb 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
         }
         
         /* Button spacing from cards */
@@ -632,7 +634,7 @@ if st.session_state.authentication_status:
             padding: 0.75rem 1rem;
             border-radius: 8px;
             margin: 0.5rem 0;
-            border-right: 3px solid #4A90E2;
+            border-right: 3px solid #667eea;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -672,7 +674,7 @@ if st.session_state.authentication_status:
             background: #F8F9FA;
             padding: 0.75rem;
             border-radius: 6px;
-            border-right: 3px solid #4A90E2;
+            border-right: 3px solid #667eea;
             direction: rtl;
             text-align: center;
         }
@@ -830,16 +832,6 @@ if st.session_state.authentication_status:
                                 "بحرانی"
                             ]
                             },
-                            # "سطح_ریسک_کلی_بنا_به_نظر_مدل_زبانی": {
-                            # "type": "string",
-                            # "description": " سطح ریسک کلی استنباط شده از گزارش بنابه نظر مدل زبانی.",
-                            # "enum": [
-                            #     "پایین",
-                            #     "متوسط",
-                            #     "بالا",
-                            #     "بحرانی"
-                            # ]
-                            # },
                             "جزییات_سطح_ریسک_تعیین_شده": {
                             "type": "string",
                             "description": " جزییات و دلیل سطح ریسک کلی استنباط شده از گزارش ."
@@ -858,7 +850,6 @@ if st.session_state.authentication_status:
                             "دوره_مالی",
                             "نوع_اظهارنظر",
                             "سطح_ریسک_کلی_بنا_به_گزارش",
-                            # "سطح_ریسک_کلی_بنا_به_نظر_مدل_زبانی",
                             "جزییات_سطح_ریسک_تعیین_شده",
                             "نکات_کلیدی_و_نتیجه_گیری"
                         ]
@@ -1079,10 +1070,6 @@ if st.session_state.authentication_status:
                                 "ریسک بحرانی"
                                 ]
                             },
-                            # "مقدار_عددی": {
-                            #     "type": "string",
-                            #     "description": " مقدار عددی  در صورت وجود در گزارش بازرس و یا حسابرس. در صورت عدم وجود به متن صورت حساب وارد نشو و NaN برگردان. "
-                            # },
                             "جزئیات": {
                                 "type": "string"
                             },
@@ -1105,7 +1092,6 @@ if st.session_state.authentication_status:
                             "موضوع",
                             "در_گزارش_آمده",
                             "وضعیت",
-                            # "مقدار_عددی",
                             "جزئیات",
                             "ارجاع"
                             ]
@@ -1155,7 +1141,6 @@ if st.session_state.authentication_status:
         st.markdown("""
         <div class="main-header">
             <h1 class="main-title">📊 تحلیلگر هوشمند صورتهای مالی</h1>
-            
         </div>
         """, unsafe_allow_html=True)
 
@@ -1235,80 +1220,6 @@ if st.session_state.authentication_status:
         
         st.markdown("</div>", unsafe_allow_html=True)
         return uploaded_files
-
-    def create_processing_section(uploaded_files):
-        """Create clean processing section with centered metrics"""
-        if not uploaded_files:
-            return None
-        
-        st.markdown("""
-        <div class="content-card">
-            <h2 class="section-title">🚀 آماده پردازش</h2>
-        """, unsafe_allow_html=True)
-        
-        # File statistics with centered metrics
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-title">تعداد فایل‌ها</div>
-                <div class="metric-value">{len(uploaded_files)}</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col2:
-            # Calculate total size based on file type
-            if uploaded_files and isinstance(uploaded_files[0], dict):  # ZIP extracted files
-                total_size = sum(len(f['content']) for f in uploaded_files)
-            else:  # Regular uploaded files
-                total_size = sum(f.size for f in uploaded_files)
-            
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-title">حجم کل</div>
-                <div class="metric-value">{total_size / (1024*1024):.1f} MB</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col3:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-title">وضعیت</div>
-                <div class="metric-value">آماده</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Add spacing before the button
-        st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
-        
-        # File list with custom expander to avoid keyboard_double_array bug
-        if st.button("📋 لیست فایل ها", key="toggle_files"):
-            st.session_state.show_files = not st.session_state.get('show_files', False)
-        
-        if st.session_state.get('show_files', False):
-            for i, file in enumerate(uploaded_files):
-                if isinstance(file, dict):  # ZIP extracted
-                    filename = file['name']
-                    file_size = len(file['content']) / 1024
-                else:  # Regular upload
-                    filename = file.name
-                    file_size = file.size / 1024
-                
-                st.markdown(f"""
-                <div class="file-item">
-                    <span class="file-name">{i+1}. {filename}</span>
-                    <span class="file-size">{file_size:.1f} KB</span>
-                </div>
-                """, unsafe_allow_html=True)
-        
-        st.markdown("</div>", unsafe_allow_html=True)
-        
-        # Process button
-        if st.button("🚀 شروع تحلیل", type="primary", key="process_btn"):
-            return process_files(uploaded_files)
-        
-        return None
 
     def process_files(uploaded_files):
         """Process files directly without creating temporary files"""
@@ -1452,16 +1363,16 @@ if st.session_state.authentication_status:
                         auditor_name = analysis['نام_حسابرس']
                         opinion_type = analysis['نوع_اظهارنظر']
                         risk_level = analysis['سطح_ریسک_کلی_بنا_به_گزارش']
-                        financial_year = analysis['دوره_مالی']  # Extract the financial year
+                        financial_year = analysis['دوره_مالی']
                         
                         # Risk color coding
                         risk_colors = {
-                            'پایین': '#27AE60',
+                            'پایین': '#11998e',
                             'متوسط': '#F39C12',
                             'بالا': '#E67E22',
                             'بحرانی': '#E74C3C'
                         }
-                        risk_color = risk_colors.get(risk_level, '#4A90E2')
+                        risk_color = risk_colors.get(risk_level, '#667eea')
                         risk_class = get_risk_class(risk_level)
                         
                         # Risk level icons
@@ -1474,7 +1385,7 @@ if st.session_state.authentication_status:
                         risk_icon = risk_icons.get(risk_level, '⚪')
 
                         st.markdown(f"""
-                        <div class="result-item" style="border-right: 4px solid #27AE60;">
+                        <div class="result-item" style="border-right: 4px solid #11998e;">
                             <h4 style="color: #2C3E50; margin: 0 0 1rem 0;">✅ {filename}</h4>
                             <div class="company-info">
                                 <div class="info-item">
@@ -1502,7 +1413,7 @@ if st.session_state.authentication_status:
                         """, unsafe_allow_html=True)
                     except Exception as e:
                         st.markdown(f"""
-                        <div class="result-item" style="border-right: 4px solid #27AE60;">
+                        <div class="result-item" style="border-right: 4px solid #11998e;">
                             <h4 style="color: #2C3E50; margin: 0;">✅ {filename}</h4>
                             <p style="color: #7F8C8D; margin: 0.5rem 0 0 0;">تحلیل موفق - جزئیات در دسترس نیست</p>
                         </div>
@@ -1532,8 +1443,7 @@ if st.session_state.authentication_status:
                             company_name = analysis['نام_شرکت']
                             financial_year = analysis['دوره_مالی']
                             
-                            # Extract year from financial year (e.g., "سال مالی منتهی به ۲۹ اسفند ۱۴۰۲" -> "1402")
-                            import re
+                            # Extract year from financial year
                             year_match = re.search(r'(\d{4})', financial_year)
                             if year_match:
                                 year = year_match.group(1)
@@ -1608,7 +1518,6 @@ if st.session_state.authentication_status:
                     financial_year = report["بخش۱_خلاصه_و_اطلاعات_کلیدی"]["دوره_مالی"]
                     
                     # Extract year from financial year
-                    import re
                     year_match = re.search(r'(\d{4})', financial_year)
                     if year_match:
                         year = year_match.group(1)
@@ -1638,9 +1547,6 @@ if st.session_state.authentication_status:
                         df1.to_excel(writer, sheet_name="بخش1_خلاصه", index=False)
                     except Exception as e:
                         st.warning(f"خطا در پردازش بخش 1: {str(e)}")
-                    
-                    # Rest of your existing code for sections 2 and 3...
-                    # [Keep the existing section 2 and 3 code as is]
                     
                     # Section 2
                     try:
@@ -1726,69 +1632,180 @@ if st.session_state.authentication_status:
             st.session_state.show_files = False
         if 'show_results' not in st.session_state:
             st.session_state.show_results = True
+        if 'processing' not in st.session_state:
+            st.session_state.processing = False
         
         # Create header
         create_header()
-  
         
-        # Main content
-        col1, col2 = st.columns([3, 1])
+        # Create Tabs
+        tab1, tab2 = st.tabs(["📁 بارگذاری فایل", "📊 تحلیل و گزارش"])
         
-        with col1:
+        with tab1:
+            # Guide box for upload tab
+            st.markdown("""
+            <div class="content-card" style="background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); color: #2C3E50;">
+                <h3 style="color: #2C3E50; margin-bottom: 1rem;">📋 راهنمای بارگذاری فایل</h3>
+                <p><strong>✨ مراحل کار:</strong></p>
+                <ul style="padding-right: 1.5rem;">
+                    <li>📄 فایل‌های PDF گزارش حسابرسی را انتخاب کنید</li>
+                    <li>📦 یا یک فایل ZIP حاوی چندین PDF بارگذاری کنید</li>
+                    <li>✅ پس از انتخاب، فایل‌ها را بررسی کنید</li>
+                    <li>🚀 دکمه "شروع تحلیل" را بزنید</li>
+                </ul>
+                <p><strong>⚠️ نکات مهم:</strong></p>
+                <ul style="padding-right: 1.5rem;">
+                    <li>فرمت پشتیبانی شده: PDF</li>
+                    <li>حداکثر حجم هر فایل: 50 مگابایت</li>
+                    <li>کیفیت تصاویر اسکن شده مهم است</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+            
             # File upload section
             uploaded_files = create_file_upload_section()
             
-            # Processing section
+            # Show upload statistics
             if uploaded_files:
-                results = create_processing_section(uploaded_files)
-                if results:
-                    st.session_state.results = results
-            
-            # Results section
-            if st.session_state.results:
-                create_results_section(st.session_state.results)
-        
-        with col2:
-            # Statistics panel with centered metrics
-            if st.session_state.results:
                 st.markdown("""
                 <div class="content-card">
-                    <h3 style="color: #2C3E50; margin-bottom: 1rem; text-align: center;">📈 آمار کلی</h3>
+                    <h2 class="section-title">📊 آمار بارگذاری</h2>
                 """, unsafe_allow_html=True)
                 
-                total_files = len(st.session_state.results)
-                successful = sum(1 for _, result in st.session_state.results if 'error' not in result)
-                success_rate = (successful / total_files) * 100 if total_files > 0 else 0
+                col1, col2, col3 = st.columns(3)
                 
-                # Use centered metric cards instead of st.metric
-                st.markdown(f"""
-                <div class="metric-card" style="margin-bottom: 1rem;">
-                    <div class="metric-title">کل فایل‌ها</div>
-                    <div class="metric-value">{total_files}</div>
-                </div>
-                """, unsafe_allow_html=True)
+                with col1:
+                    st.markdown(f"""
+                    <div class="metric-card">
+                        <div class="metric-title">تعداد فایل‌ها</div>
+                        <div class="metric-value">{len(uploaded_files)}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
-                st.markdown(f"""
-                <div class="metric-card" style="margin-bottom: 1rem;">
-                    <div class="metric-title">تحلیل موفق</div>
-                    <div class="metric-value">{successful}</div>
-                </div>
-                """, unsafe_allow_html=True)
+                with col2:
+                    if uploaded_files and isinstance(uploaded_files[0], dict):
+                        total_size = sum(len(f['content']) for f in uploaded_files)
+                    else:
+                        total_size = sum(f.size for f in uploaded_files)
+                    
+                    st.markdown(f"""
+                    <div class="metric-card">
+                        <div class="metric-title">حجم کل</div>
+                        <div class="metric-value">{total_size / (1024*1024):.1f} MB</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
-                st.markdown(f"""
-                <div class="metric-card" style="margin-bottom: 1rem;">
-                    <div class="metric-title">درصد موفقیت</div>
-                    <div class="metric-value">{success_rate:.1f}%</div>
-                </div>
-                """, unsafe_allow_html=True)
+                with col3:
+                    st.markdown(f"""
+                    <div class="metric-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                        <div class="metric-title">وضعیت</div>
+                        <div class="metric-value">✅ آماده</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 st.markdown("</div>", unsafe_allow_html=True)
+                
+                # File list
+                if st.button("📋 مشاهده لیست فایل‌ها", key="toggle_files"):
+                    st.session_state.show_files = not st.session_state.get('show_files', False)
+                
+                if st.session_state.get('show_files', False):
+                    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+                    for i, file in enumerate(uploaded_files):
+                        if isinstance(file, dict):
+                            filename = file['name']
+                            file_size = len(file['content']) / 1024
+                        else:
+                            filename = file.name
+                            file_size = file.size / 1024
+                        
+                        st.markdown(f"""
+                        <div class="file-item">
+                            <span class="file-name">{i+1}. {filename}</span>
+                            <span class="file-size">{file_size:.1f} KB</span>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
+                
+                # Process button
+                if st.button("🚀 شروع تحلیل", type="primary", key="process_btn"):
+                    st.session_state.processing = True
+                    st.session_state.results = process_files(uploaded_files)
+                    st.session_state.processing = False
+                    st.rerun()
+        
+        with tab2:
+            # Guide box for analysis tab
+            st.markdown("""
+            <div class="content-card" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: #2C3E50;">
+                <h3 style="color: #2C3E50; margin-bottom: 1rem;">📊 راهنمای تحلیل و گزارش</h3>
+                <p><strong>📈 این بخش شامل:</strong></p>
+                <ul style="padding-right: 1.5rem;">
+                    <li>📊 نمایش نتایج تحلیل هوشمند</li>
+                    <li>🏢 اطلاعات شرکت‌ها و دوره مالی</li>
+                    <li>⚠️ سطح ریسک و اظهارنظر حسابرس</li>
+                    <li>📥 دانلود گزارش‌های Excel</li>
+                </ul>
+                <p><strong>💡 نکته:</strong> پس از تحلیل، می‌توانید نتایج را به صورت Excel دانلود کنید.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Show processing status
+            if st.session_state.processing:
+                st.markdown("""
+                <div class="processing-status">
+                    <div class="hourglass-icon">⏳</div>
+                    <div class="processing-text">در حال پردازش فایل‌ها...</div>
+                    <div class="processing-subtext">لطفاً صبر کنید، این فرآیند ممکن است چند دقیقه طول بکشد</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Show results
+            if st.session_state.results:
+                create_results_section(st.session_state.results)
+                
+                # Statistics panel
+                col1, col2 = st.columns([3, 1])
+                
+                with col2:
+                    st.markdown("""
+                    <div class="content-card">
+                        <h3 style="color: #2C3E50; margin-bottom: 1rem; text-align: center;">📈 آمار کلی</h3>
+                    """, unsafe_allow_html=True)
+                    
+                    total_files = len(st.session_state.results)
+                    successful = sum(1 for _, result in st.session_state.results if 'error' not in result)
+                    success_rate = (successful / total_files) * 100 if total_files > 0 else 0
+                    
+                    st.markdown(f"""
+                    <div class="metric-card" style="margin-bottom: 1rem;">
+                        <div class="metric-title">کل فایل‌ها</div>
+                        <div class="metric-value">{total_files}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    st.markdown(f"""
+                    <div class="metric-card" style="margin-bottom: 1rem; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                        <div class="metric-title">تحلیل موفق</div>
+                        <div class="metric-value">{successful}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    st.markdown(f"""
+                    <div class="metric-card" style="margin-bottom: 1rem;">
+                        <div class="metric-title">درصد موفقیت</div>
+                        <div class="metric-value">{success_rate:.1f}%</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    st.markdown("</div>", unsafe_allow_html=True)
+            else:
+                st.markdown("""
+                <div class="content-card" style="text-align: center; padding: 3rem;">
+                    <h3 style="color: #7F8C8D; margin-bottom: 1rem;">📭 هنوز فایلی تحلیل نشده است</h3>
+                    <p style="color: #95A5A6;">لطفاً ابتدا از بخش "بارگذاری فایل" فایل‌های خود را انتخاب و تحلیل کنید.</p>
+                </div>
+                """, unsafe_allow_html=True)
 
     if __name__ == "__main__":
         main()
-
-
-
-
-
-
