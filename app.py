@@ -1,64 +1,535 @@
+"مبانی_قانونی_و_استانداردها": {
+                                        "type": "array",
+                                        "items": {
+                                        "type": "string",
+                                        "enum": ["قانون پولی و بانکی کشور", "قانون عملیات بانکی بدون رباً", "آیین نامه ها و دستورالعملهای بانک مرکزی (مهمترین بخش)", "اساسنامه بانک", "قانون تجارت (در موارد مرتبط)", "استانداردهای حسابداری", "استانداردهای حسابرسی"]
+                                        }
+                                    }
+                                    },
+                                    "required": ["ارجاع", "عنوان_تخلف", "شرح", "مبانی_قانونی_و_استانداردها"]
+                                }
+                                }
+                            },
+                            "required": ["موضوعیت_دارد"]
+                            }
+                        }
+                        },
+                        "بخش۳_چک_لیست_موضوعی": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                            "موضوع": {"type": "string", "enum": ["کفایت سرمایه", "تسعیر ارز و عملیات خارجی", "مالیات و جرائم مالیاتی", "تجدید ارزیابی دارایی‌های ثابت و نامشهود", "تعهدات ارزی و اختلاف با بانک مرکزی", "تهاتر(Barter)", "عدم دریافت تأییدیه‌های حسابداری", "مغایرت‌های حساب جاری بانک مرکزی", "نسبت کفایت سرمایه", "نسبت ها در چارچوب بازل(bazel Accords)", "(Facilities and Credits)تسهیلات و اعتبارات", "سود سهام دولت", "پروژه‌های اجرایی ناتمام", "معاملات با اشخاص وابسته", "ذخیره گیری"]},
+                            "در_گزارش_آمده": {"type": "boolean"},
+                            "وضعیت": {"type": "string", "enum": ["مصداق ندارد", "بررسی شده - ریسک خاصی گزارش نشده", "مسئله کلیدی منجر به اظهارنظر مشروط", "ریسک بحرانی"]},
+                            "جزئیات": {"type": "string"},
+                            "ارجاع": {
+                                "type": "object",
+                                "description": "ارجاع به شماره بند و صفحه مربوطه در گزارش اصلی.",    
+                                "properties": {
+                                "شماره_بند": {"type": "string", "description": "شماره بند مربوطه در گزارش حسابرس مستقل و بازرس قانونی .بین بند ها , قرار بده مانند ۲,۶"},
+                                "شماره_صفحه": {"type": "string", "description": "شماره صفحه مربوطه در گزارش حسابرس مستقل و بازرس قانونی.چنانچه این مورد در چند بند به ان اشاره شده صفحات منطبق با بند را به ترتیب بند برگردان بین صفحات , قرار بده مانند ۱,۵"}
+                                }
+                            }
+                            },
+                            "required": ["موضوع", "در_گزارش_آمده", "وضعیت", "جزئیات", "ارجاع"]
+                        }
+                        }
+                    }
+                    }
+                },
+                "required": ["تحلیل_جامع_گزارش_حسابرسی"]
+                }
+        
+        def extract_table_from_page(self, file_content):
+            client = get_client()
+            prompt = """لطفاً گزارش حسابرس مستقل و بازرس قانونی ارائه شده را تحلیل کنید و اطلاعات را طبق ساختار JSON مشخص شده استخراج کنید. تمام فیلدهای required را با دقت تکمیل کنید و از enum های تعریف شده استفاده کنید."""
+            
+            response = client.models.generate_content(
+                model="gemini-2.5-pro",
+                contents=[types.Part.from_bytes(data=file_content, mime_type="application/pdf"), prompt],
+                config={'system_instruction': """شما به عنوان یک تحلیلگر مالی و حسابرس خبره عمل می‌کنید. وظیفه شما تحلیل گزارش حسابرس مستقل و بازرس قانونی آن است . دقت کن که در تحلیل ها و ارجاعات به صفحات و بندها از گزارش حسابرس مستقل و بازرس قانونی استفاده کن و به متن صورتمالی مراجعه نکن , لطفاً تمام فیلدها را با دقت و بر اساس اطلاعات موجود در سند تکمیل کنید""", "response_mime_type": "application/json", "response_schema": self.response_schema, "temperature": 0.5}
+            )
+            
+            return json.loads(response.text)
+
+    # Main App
+    def main():
+        if 'uploaded_files' not in st.session_state:
+            st.session_state.uploaded_files = None
+        if 'results' not in st.session_state:
+            st.session_state.results = None
+        
+        st.markdown("""
+        <div class="main-header">
+            <h1 class="main-title">📊 سیستم تحلیل هوشمند صورت‌های مالی</h1>
+            <p class="main-subtitle">تحلیل حرفه‌ای گزارش‌های حسابرسی با هوش مصنوعی</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        tab1, tab2 = st.tabs(["📁 بارگذاری فایل", "⚙️ پردازش و نتایج"])
+        
+        with tab1:
+            st.markdown("""
+            <div class="alert-box alert-info">
+                <div class="alert-title">📌 راهنمای بارگذاری فایل</div>
+                <div class="alert-content">
+                    <p><strong>فرمت‌های پشتیبانی شده:</strong></p>
+                    <ul>
+                        <li>✅ فایل‌های PDF با کیفیت بالا</li>
+                        <li>✅ فایل‌های ZIP حاوی چندین PDF</li>
+                        <li>✅ حداکثر حجم هر فایل: 50 مگابایت</li>
+                    </ul>
+                    <p style="margin-top: 1rem;"><strong>💡 نکات مهم:</strong></p>
+                    <ul>
+                        <li>📄 فایل‌ها باید گزارش حسابرس مستقل و بازرس قانونی باشند</li>
+                        <li>🎯 کیفیت اسکن فایل‌ها بر دقت تحلیل تأثیرگذار است</li>
+                        <li>⚡ پردازش هر فایل حدود 30 ثانیه زمان می‌برد</li>
+                    </ul>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                upload_method = st.radio("روش بارگذاری را انتخاب کنید:", ["📄 فایل‌های جداگانه", "📦 فایل ZIP"], horizontal=False)
+            
+            uploaded_files = None
+            if upload_method == "📄 فایل‌های جداگانه":
+                uploaded_files = st.file_uploader("انتخاب فایل‌ها", type=['pdf'], accept_multiple_files=True, label_visibility="collapsed")
+            else:
+                st.markdown("""
+                <div style="background: #F8FBFF; border-radius: 12px; padding: 2rem; text-align: center; margin: 1rem 0;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📦</div>
+                    <div style="font-size: 1.2rem; font-weight: 600; color: #667eea;">فایل ZIP را بارگذاری کنید</div>
+                    <div style="color: #6c757d; margin-top: 0.5rem;">فایل ZIP باید شامل فایل‌های PDF باشد</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                zip_file = st.file_uploader("انتخاب فایل ZIP", type=['zip'], label_visibility="collapsed")
+                
+                if zip_file:
+                    try:
+                        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+                            pdf_files = []
+                            for file_info in zip_ref.filelist:
+                                if file_info.filename.lower().endswith('.pdf'):
+                                    pdf_content = zip_ref.read(file_info.filename)
+                                    pdf_files.append({'name': os.path.basename(file_info.filename), 'content': pdf_content})
+                        uploaded_files = pdf_files
+                        st.markdown(f"""
+                        <div class="alert-box alert-success">
+                            <div class="alert-title">✅ استخراج موفق</div>
+                            <div class="alert-content">{len(pdf_files)} فایل PDF از ZIP استخراج شد</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    except Exception as e:
+                        st.markdown(f"""
+                        <div class="alert-box alert-danger">
+                            <div class="alert-title">❌ خطا در استخراج</div>
+                            <div class="alert-content">{str(e)}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+            
+            if uploaded_files:
+                st.session_state.uploaded_files = uploaded_files
+                
+                st.markdown("""
+                <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📊 آمار فایل‌های بارگذاری شده</h3>
+                """, unsafe_allow_html=True)
+                
+                col1, col2, col3 = st.columns(3)
+                
+                if isinstance(uploaded_files[0], dict):
+                    total_size = sum(len(f['content']) for f in uploaded_files)
+                else:
+                    total_size = sum(f.size for f in uploaded_files)
+                
+                with col1:
+                    st.markdown(f"""
+                    <div class="modern-metric" style="--gradient-start: #667eea; --gradient-end: #764ba2;">
+                        <div class="metric-icon">📁</div>
+                        <div class="metric-value">{len(uploaded_files)}</div>
+                        <div class="metric-label">تعداد فایل</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col2:
+                    st.markdown(f"""
+                    <div class="modern-metric" style="--gradient-start: #f093fb; --gradient-end: #f5576c;">
+                        <div class="metric-icon">💾</div>
+                        <div class="metric-value">{total_size / (1024*1024):.1f}</div>
+                        <div class="metric-label">مگابایت</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col3:
+                    st.markdown(f"""
+                    <div class="modern-metric" style="--gradient-start: #4facfe; --gradient-end: #00f2fe;">
+                        <div class="metric-icon">✅</div>
+                        <div class="metric-value">آماده</div>
+                        <div class="metric-label">وضعیت</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown("""
+                <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📋 لیست فایل‌ها</h3>
+                """, unsafe_allow_html=True)
+                
+                for i, file in enumerate(uploaded_files):
+                    if isinstance(file, dict):
+                        filename = file['name']
+                        file_size = len(file['content']) / 1024
+                    else:
+                        filename = file.name
+                        file_size = file.size / 1024
+                    
+                    st.markdown(f"""
+                    <div class="file-card">
+                        <div class="file-info">
+                            <div class="file-icon">📄</div>
+                            <div>
+                                <div class="file-name">{i+1}. {filename}</div>
+                                <div class="file-size">{file_size:.1f} کیلوبایت</div>
+                            </div>
+                        </div>
+                        <div class="file-status status-ready">✓ آماده</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown("""
+                <div class="nav-helper">
+                    <div class="nav-helper-title">🎯 مرحله بعدی</div>
+                    <div class="nav-helper-text">برای شروع تحلیل و مشاهده نتایج، به تب "پردازش و نتایج" بروید ⬅️</div>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown("""
+                <div class="alert-box alert-warning">
+                    <div class="alert-title">⚠️ هنوز فایلی بارگذاری نشده</div>
+                    <div class="alert-content">لطفاً فایل‌های PDF خود را بارگذاری کنید</div>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        with tab2:
+            if not st.session_state.uploaded_files:
+                st.markdown("""
+                <div class="alert-box alert-warning">
+                    <div class="alert-title">⚠️ فایلی برای پردازش وجود ندارد</div>
+                    <div class="alert-content">
+                        <p>لطفاً ابتدا به تب "بارگذاری فایل" بروید و فایل‌های PDF خود را بارگذاری کنید.</p>
+                        <p style="margin-top: 1rem;"><strong>مراحل لازم:</strong></p>
+                        <ol>
+                            <li>به تب "بارگذاری فایل" بروید</li>
+                            <li>فایل‌های PDF یا ZIP خود را انتخاب کنید</li>
+                            <li>پس از بارگذاری موفق، به این تب برگردید</li>
+                        </ol>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown("""
+                <div class="alert-box alert-info">
+                    <div class="alert-title">🤖 تحلیل هوشمند با AI</div>
+                    <div class="alert-content">
+                        <p><strong>قابلیت‌های سیستم:</strong></p>
+                        <ul>
+                            <li>🔍 <strong>استخراج خودکار:</strong> اطلاعات کلیدی از گزارش حسابرسی</li>
+                            <li>📊 <strong>ارزیابی ریسک:</strong> تعیین سطح ریسک بر اساس معیارهای حسابرسی</li>
+                            <li>📋 <strong>تحلیل جامع:</strong> بررسی بند به بند گزارش</li>
+                            <li>📥 <strong>خروجی اکسل:</strong> دانلود نتایج به صورت فایل اکسل ساختاریافته</li>
+                        </ul>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.markdown(f"""
+                    <div class="modern-metric" style="--gradient-start: #667eea; --gradient-end: #764ba2;">
+                        <div class="metric-icon">📁</div>
+                        <div class="metric-value">{len(st.session_state.uploaded_files)}</div>
+                        <div class="metric-label">فایل آماده</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col2:
+                    estimated_time = len(st.session_state.uploaded_files) * 30
+                    st.markdown(f"""
+                    <div class="modern-metric" style="--gradient-start: #f093fb; --gradient-end: #f5576c;">
+                        <div class="metric-icon">⏱️</div>
+                        <div class="metric-value">{estimated_time}</div>
+                        <div class="metric-label">ثانیه (تخمین)</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col3:
+                    st.markdown("""
+                    <div class="modern-metric" style="--gradient-start: #4facfe; --gradient-end: #00f2fe;">
+                        <div class="metric-icon">🤖</div>
+                        <div class="metric-value">Gemini 2.5 Pro</div>
+                        <div class="metric-label">مدل AI</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                if st.button("🚀 شروع تحلیل", type="primary", key="start_analysis"):
+                    analyzer = FinancialAnalyzer()
+                    results = []
+                    
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                    time_text = st.empty()
+                    
+                    total_files = len(st.session_state.uploaded_files)
+                    estimated_time_per_file = 30
+                    
+                    for i, file in enumerate(st.session_state.uploaded_files):
+                        try:
+                            if isinstance(file, dict):
+                                filename = file['name']
+                                file_content = file['content']
+                            else:
+                                filename = file.name
+                                file_content = file.getvalue()
+                            
+                            remaining_files = total_files - i
+                            remaining_time = remaining_files * estimated_time_per_file
+                            
+                            status_text.markdown(f"""
+                            <div class="alert-box alert-info">
+                                <div class="alert-title">⏳ در حال پردازش...</div>
+                                <div class="alert-content">
+                                    <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">📄 فایل {i+1} از {total_files}: <strong>{filename}</strong></p>
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            time_text.markdown(f"""
+                            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                                        padding: 1.5rem; border-radius: 15px; text-align: center; 
+                                        color: white; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+                                        margin-bottom: 1rem;">
+                                <div style="font-size: 3rem; margin-bottom: 0.5rem;">⏳</div>
+                                <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 0.3rem;">
+                                    {remaining_time} ثانیه
+                                </div>
+                                <div style="font-size: 1rem; opacity: 0.9;">
+                                    زمان تقریبی باقیمانده
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            result = analyzer.extract_table_from_page(file_content)
+                            results.append((filename, result))
+                            
+                        except Exception as e:
+                            error_result = {"error": f"خطا: {str(e)}"}
+                            results.append((filename, error_result))
+                        
+                        progress_bar.progress((i + 1) / total_files)
+                    
+                    st.session_state.results = results
+                    
+                    time_text.empty()
+                    status_text.markdown(f"""
+                    <div class="alert-box alert-success">
+                        <div class="alert-title">🎉 تحلیل تکمیل شد!</div>
+                        <div class="alert-content">{len(results)} فایل با موفقیت پردازش شد</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                if st.session_state.results:
+                    st.markdown("""
+                    <hr style="margin: 3rem 0; border: none; height: 2px; background: linear-gradient(90deg, transparent, #667eea, transparent);">
+                    """, unsafe_allow_html=True)
+                    
+                    st.markdown("""
+                    <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📋 جزئیات نتایج</h3>
+                    """, unsafe_allow_html=True)
+                    
+                    results = st.session_state.results
+                    
+                    successful = sum(1 for _, result in results if 'error' not in result)
+                    failed = len(results) - successful
+                    success_rate = (successful / len(results)) * 100 if results else 0
+                    
+                    col1, col2, col3, col4 = st.columns(4)
+                    
+                    with col1:
+                        st.markdown(f"""
+                        <div class="modern-metric" style="--gradient-start: #667eea; --gradient-end: #764ba2;">
+                            <div class="metric-icon">📊</div>
+                            <div class="metric-value">{len(results)}</div>
+                            <div class="metric-label">کل فایل‌ها</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    with col2:
+                        st.markdown(f"""
+                        <div class="modern-metric" style="--gradient-start: #4caf50; --gradient-end: #66bb6a;">
+                            <div class="metric-icon">✅</div>
+                            <div class="metric-value">{successful}</div>
+                            <div class="metric-label">موفق</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    with col3:
+                        st.markdown(f"""
+                        <div class="modern-metric" style="--gradient-start: #f44336; --gradient-end: #e57373;">
+                            <div class="metric-icon">❌</div>
+                            <div class="metric-value">{failed}</div>
+                            <div class="metric-label">ناموفق</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    with col4:
+                        st.markdown(f"""
+                        <div class="modern-metric" style="--gradient-start: #f093fb; --gradient-end: #f5576c;">
+                            <div class="metric-icon">📈</div>
+                            <div class="metric-value">{success_rate:.0f}%</div>
+                            <div class="metric-label">نرخ موفقیت</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    st.markdown("""
+                    <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📄 نمایش نتایج</h3>
+                    """, unsafe_allow_html=True)
+                    
+                    for filename, result in results:
+                        if 'error' in result:
+                            st.markdown(f"""
+                            <div class="result-card" style="border-top-color: #f44336;">
+                                <div class="result-header">
+                                    <div class="result-title">❌ {filename}</div>
+                                </div>
+                                <div class="alert-content" style="color: #f44336;">{result['error']}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            try:
+                                analysis = result['تحلیل_جامع_گزارش_حسابرسی']['بخش۱_خلاصه_و_اطلاعات_کلیدی']
+                                company_name = analysis['نام_شرکت']
+                                auditor_name = analysis['نام_حسابرس']
+                                opinion_type = analysis['نوع_اظهارنظر']
+                                risk_level = analysis['سطح_ریسک_کلی_بنا_به_گزارش']
+                                financial_year = analysis['دوره_مالی']
+                                
+                                risk_colors = {'پایین': '#4caf50', 'متوسط': '#ff9800', 'بالا': '#f44336', 'بحرانی': '#f44336'}
+                                border_color = risk_colors.get(risk_level, '#4caf50')
+                                
+                                risk_card_classes = {'پایین': 'risk-card-low', 'متوسط': 'risk-card-medium', 'بالا': 'risk-card-high', 'بحرانی': 'risk-card-critical'}
+                                risk_card_class = risk_card_classes.get(risk_level, 'risk-card-low')
+                                
+                                risk_icons = {'پایین': '🟢', 'متوسط': '🟡', 'بالا': '🟠', 'بحرانی': '🔴'}
+                                risk_icon = risk_icons.get(risk_level, '⚪')
+                                
+                                st.markdown(f"""
+                                <div class="result-card" style="border-top-color: {border_color};">
+                                    <div class="result-header">
+                                        <div class="result-title">✅ {filename}</div>
+                                    </div>
+                                    <div class="info-grid">
+                                        <div class="info-item">
+                                            <div class="info-label">🏢 نام شرکت</div>
+                                            <div class="info-value">{company_name}</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label">📅 دوره مالی</div>
+                                            <div class="info-value">{financial_year}</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label">👨‍💼 حسابرس</div>
+                                            <div class="info-value">{auditor_name}</div>
+                                        </div>
+                                    </div>
+                                    <div class="info-grid" style="margin-top: 1rem;">
+                                        <div class="info-item">
+                                            <div class="info-label">📋 نوع اظهارنظر</div>
+                                            <div class="info-value">{opinion_type}</div>
+                                        </div>
+                                        <div class="risk-card {risk_card_class}">
+                                            <div class="info-label">🎯 سطح ریسک</div>
+                                            <div class="info-value" style="font-size: 1.5rem;">{risk_icon} {risk_level}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                            except:
+                                st.markdown(f"""
+                                <div class="result-card" style="border-top-color: #4caf50;">
+                                    <div class="result-header">
+                                        <div class="result-title">✅ {filename}</div>
+                                    </div>
+                                    <div class="alert-content">تحلیل موفق</div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                    
+                    # Download Excel Section
+                    st.markdown("""
+                    <hr style="margin: 3rem 0; border: none; height: 2px; background: linear-gradient(90deg, transparent, #667eea, transparent);">
+                    """, unsafe_allow_html=True)
+                    
+                    st.markdown("""
+                    <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📥 دانلود نتایج</h3>
+                    <div class="alert-box alert-info">
+                        <div class="alert-title">📊 خروجی فایل اکسل</div>
+                        <div class="alert-content">
+                            <p><strong>فایل اکسل شامل اطلاعات زیر است:</strong></p>
+                            <ul>
+                                <li>📋 <strong>بخش 1:</strong> خلاصه و اطلاعات کلیدی (نام شرکت، حسابرس، سطح ریسک)</li>
+                                <li>📄 <strong>بخش 2:</strong> تجزیه تحلیل گزارش (اظهارنظر، مبانی، تاکید، الزامات قانونی)</li>
+                                <li>✅ <strong>بخش 3:</strong> چک لیست موضوعی با ارجاعات کامل</li>
+                            </ul>
+                            <p style="margin-top: 1rem;">🔍 هر گزارش در شیت‌های جداگانه با نام شرکت و سال مالی</p>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
                     def flatten_reference_data(df):
-                        """تابع برای تبدیل ستون ارجاع به ستون‌های جداگانه"""
                         if 'ارجاع' in df.columns:
-                            df['شماره_بند'] = df['ارجاع'].apply(
-                                lambda x: x.get('شماره_بند', '') if isinstance(x, dict) else ''
-                            )
-                            df['شماره_صفحه'] = df['ارجاع'].apply(
-                                lambda x: x.get('شماره_صفحه', '') if isinstance(x, dict) else ''
-                            )
+                            df['شماره_بند'] = df['ارجاع'].apply(lambda x: x.get('شماره_بند', '') if isinstance(x, dict) else '')
+                            df['شماره_صفحه'] = df['ارجاع'].apply(lambda x: x.get('شماره_صفحه', '') if isinstance(x, dict) else '')
                             df = df.drop('ارجاع', axis=1)
                         return df
                     
                     def flatten_array_fields(df):
-                        """تابع برای تبدیل آرایه‌ها به رشته"""
                         for col in df.columns:
-                            df[col] = df[col].apply(
-                                lambda x: ", ".join(x) if isinstance(x, list) else x
-                            )
+                            df[col] = df[col].apply(lambda x: ", ".join(x) if isinstance(x, list) else x)
                         return df
                     
-                    # Prepare comprehensive Excel data with all sections
                     output = BytesIO()
                     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                        
                         for filename, result in results:
                             if 'error' in result:
                                 continue
                             
                             try:
                                 report = result["تحلیل_جامع_گزارش_حسابرسی"]
-                                
-                                # Get company info for sheet naming
                                 company_name = report["بخش۱_خلاصه_و_اطلاعات_کلیدی"]["نام_شرکت"]
                                 financial_year = report["بخش۱_خلاصه_و_اطلاعات_کلیدی"]["دوره_مالی"]
                                 
-                                # Extract year
                                 year_match = re.search(r'(\d{4})', financial_year)
                                 year = year_match.group(1) if year_match else "Unknown"
                                 
-                                # Clean company name
                                 clean_company = re.sub(r'[\\/:"*?<>|]+', "", company_name).strip()[:20]
                                 sheet_prefix = f"{clean_company}_{year}"
                                 
-                                # Section 1: خلاصه
+                                # Section 1
                                 part1 = report["بخش۱_خلاصه_و_اطلاعات_کلیدی"]
-                                df1 = pd.DataFrame.from_dict({k: [v] if not isinstance(v, list) else [", ".join(v)] 
-                                                for k, v in part1.items()})
+                                df1 = pd.DataFrame.from_dict({k: [v] if not isinstance(v, list) else [", ".join(v)] for k, v in part1.items()})
                                 sheet_name1 = f"{sheet_prefix}_خلاصه"[:31]
                                 df1.to_excel(writer, sheet_name=sheet_name1, index=False)
                                 
-                                # Section 2: تجزیه تحلیل
+                                # Section 2
                                 if "بخش۲_تجزیه_تحلیل_گزارش" in report:
                                     part2 = report["بخش۲_تجزیه_تحلیل_گزارش"]
                                     
-                                    # Opinion section
                                     if "بند_اظهارنظر" in part2:
                                         df_opinion = pd.DataFrame([part2["بند_اظهارنظر"]])
                                         sheet_name = f"{sheet_prefix}_اظهارنظر"[:31]
                                         df_opinion.to_excel(writer, sheet_name=sheet_name, index=False)
                                     
-                                    # Basis of opinion
                                     if "بند_مبانی_اظهارنظر" in part2:
                                         basis_data = part2["بند_مبانی_اظهارنظر"]
                                         if basis_data.get("موضوعیت_دارد", False) and "موارد_مطرح_شده" in basis_data:
@@ -70,7 +541,6 @@
                                         sheet_name = f"{sheet_prefix}_مبانی"[:31]
                                         df_basis.to_excel(writer, sheet_name=sheet_name, index=False)
                                     
-                                    # Emphasis section
                                     if "بند_تاکید_بر_مطالب_خاص" in part2:
                                         emphasis_data = part2["بند_تاکید_بر_مطالب_خاص"]
                                         if emphasis_data.get("موضوعیت_دارد", False) and "موارد_مطرح_شده" in emphasis_data:
@@ -82,21 +552,16 @@
                                         sheet_name = f"{sheet_prefix}_تاکید"[:31]
                                         df_emphasis.to_excel(writer, sheet_name=sheet_name, index=False)
                                     
-                                    # Legal compliance
                                     if "گزارش_رعایت_الزامات_قانونی" in part2:
                                         legal_data = part2["گزارش_رعایت_الزامات_قانونی"]
                                         if legal_data.get("موضوعیت_دارد", False) and "تخلفات" in legal_data:
                                             violations = legal_data["تخلفات"]
                                             processed_violations = []
-                                            
                                             for violation in violations:
                                                 processed_violation = violation.copy()
                                                 if "مبانی_قانونی_و_استانداردها" in processed_violation:
-                                                    processed_violation["مبانی_قانونی_و_استانداردها"] = ", ".join(
-                                                        processed_violation["مبانی_قانونی_و_استانداردها"]
-                                                    )
+                                                    processed_violation["مبانی_قانونی_و_استانداردها"] = ", ".join(processed_violation["مبانی_قانونی_و_استانداردها"])
                                                 processed_violations.append(processed_violation)
-                                            
                                             df_legal = pd.DataFrame(processed_violations)
                                             df_legal = flatten_reference_data(df_legal)
                                             df_legal = flatten_array_fields(df_legal)
@@ -105,7 +570,7 @@
                                         sheet_name = f"{sheet_prefix}_قانونی"[:31]
                                         df_legal.to_excel(writer, sheet_name=sheet_name, index=False)
                                 
-                                # Section 3: چک لیست
+                                # Section 3
                                 if "بخش۳_چک_لیست_موضوعی" in report:
                                     part3 = report["بخش۳_چک_لیست_موضوعی"]
                                     df3 = pd.DataFrame(part3)
@@ -114,7 +579,7 @@
                                     sheet_name = f"{sheet_prefix}_چک_لیست"[:31]
                                     df3.to_excel(writer, sheet_name=sheet_name, index=False)
                                 
-                                # Adjust column widths for all sheets
+                                # Adjust columns
                                 for sheet_name in writer.sheets:
                                     worksheet = writer.sheets[sheet_name]
                                     for column in worksheet.columns:
@@ -125,27 +590,60 @@
                                                 if len(str(cell.value)) > max_length:
                                                     max_length = len(str(cell.value))
                                             except:
-                                                import streamlit as st
+                                                pass
+                                        adjusted_width = min(max_length + 2, 60)
+                                        worksheet.column_dimensions[column_letter].width = adjusted_width
+                            
+                            except Exception as e:
+                                st.warning(f"خطا در پردازش {filename}: {str(e)}")
+                                continue
+                    
+                    excel_file = output.getvalue()
+                    
+                    col1, col2, col3 = st.columns([1, 2, 1])
+                    with col2:
+                        st.download_button(
+                            label="📥 دانلود فایل اکسل کامل",
+                            data=excel_file,
+                            file_name=f"تحلیل_کامل_مالی_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True
+                        )
+                    
+                    st.markdown(f"""
+                    <div class="alert-box alert-success">
+                        <div class="alert-title">✅ آماده دانلود</div>
+                        <div class="alert-content">
+                            <p><strong>فایل اکسل شامل تحلیل کامل {len([r for r in results if 'error' not in r[1]])} گزارش:</strong></p>
+                            <ul>
+                                <li>📊 <strong>بخش 1:</strong> خلاصه و اطلاعات کلیدی</li>
+                                <li>📋 <strong>بخش 2:</strong> تجزیه تحلیل گزارش (اظهارنظر، مبانی، تاکید، الزامات قانونی)</li>
+                                <li>✅ <strong>بخش 3:</strong> چک لیست موضوعی</li>
+                            </ul>
+                            <p style="margin-top: 1rem;">✨ هر گزارش در شیت‌های جداگانه با نام شرکت و سال مالی</p>
+                            <p>🔍 تمامی ارجاعات به بند و صفحه در ستون‌های جداگانه</p>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+    if __name__ == "__main__":
+        main()
+import streamlit as st
 import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
-from streamlit_authenticator.utilities.hasher import Hasher
 import json
 import pandas as pd
-from PyPDF2 import PdfReader, PdfWriter
 from google import genai
 from google.genai import types
 import os
 import tempfile
 import zipfile
-from collections import deque
 from itertools import cycle
 import time
 import re
-from typing import List, Dict, Any, Tuple
-import base64
 from io import BytesIO
-import openpyxl
+import bcrypt
 
 # Page configuration
 st.set_page_config(
@@ -161,45 +659,25 @@ api_keys = [
     "AIzaSyDyj1DlOLAlbKzTLFP2tz95TcIca4oV0Vg"
 ]
 
-# ==================== AUTHENTICATION CODE START ====================
+# ==================== AUTHENTICATION ====================
 
-# Create config if it doesn't exist
 config_path = 'config.yaml'
 if not os.path.exists(config_path):
     default_config = {
         'credentials': {
             'usernames': {
-                'admin': {
-                    'email': 'admin@example.com',
-                    'name': 'مدیر سیستم',
-                    'password': 'placeholder'
-                },
-                'fin.analyst': {
-                    'email': 'analyst@example.com',
-                    'name': 'تحلیلگر مالی',
-                    'password': 'placeholder'
-                },
-                'h.khandani': {
-                    'email': 'khandani@example.com',
-                    'name': 'مدیر',
-                    'password': 'placeholder'
-                }
+                'admin': {'email': 'admin@example.com', 'name': 'مدیر سیستم', 'password': 'placeholder'},
+                'fin.analyst': {'email': 'analyst@example.com', 'name': 'تحلیلگر مالی', 'password': 'placeholder'},
+                'h.khandani': {'email': 'khandani@example.com', 'name': 'مدیر', 'password': 'placeholder'}
             }
         },
-        'cookie': {
-            'name': 'financial_analyzer_cookie',
-            'key': 'random_signature_key_12345',
-            'expiry_days': 30
-        }
+        'cookie': {'name': 'financial_analyzer_cookie', 'key': 'random_signature_key_12345', 'expiry_days': 30}
     }
     with open(config_path, 'w', encoding='utf-8') as f:
         yaml.dump(default_config, f, allow_unicode=True)
 
 with open('config.yaml', encoding='utf-8') as file:
     config = yaml.load(file, Loader=SafeLoader)
-
-# Hash passwords manually using bcrypt
-import bcrypt
 
 def hash_password(password):
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
@@ -224,7 +702,7 @@ if st.session_state.authentication_status is None:
         if st.session_state.get("authentication_status"):
             st.session_state.name = st.session_state.get("name")
             st.session_state.username = st.session_state.get("username")
-    except TypeError:
+    except:
         try:
             name, authentication_status, username = authenticator.login('main')
             st.session_state.authentication_status = authentication_status
@@ -245,11 +723,10 @@ if st.session_state.get('authentication_status') is None:
     st.warning('لطفاً نام کاربری و رمز عبور خود را وارد کنید')
     st.stop()
 
-# If authenticated, show the main app
+# ==================== MAIN APP ====================
 if st.session_state.get('authentication_status'):
     
-    # ==================== CUSTOM SIDEBAR ====================
-    
+    # Sidebar
     with st.sidebar:
         st.markdown(f"""
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; text-align: center;">
@@ -277,7 +754,7 @@ if st.session_state.get('authentication_status'):
         
         authenticator.logout('🚪 خروج از سیستم', 'sidebar')
     
-    # ==================== ENHANCED CSS WITH MODERN DESIGN ====================
+    # CSS
     st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -386,14 +863,8 @@ if st.session_state.get('authentication_status'):
         }
         
         @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from {opacity: 0; transform: translateY(-20px);}
+            to {opacity: 1; transform: translateY(0);}
         }
         
         .alert-info {
@@ -477,46 +948,6 @@ if st.session_state.get('authentication_status'):
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
-        }
-        
-        .upload-zone {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            border: 3px dashed #667eea;
-            border-radius: 20px;
-            padding: 3rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            margin: 2rem 0;
-        }
-        
-        .upload-zone:hover {
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            border-color: #764ba2;
-            transform: scale(1.02);
-        }
-        
-        .upload-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            animation: bounce 2s infinite;
-        }
-        
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        
-        .upload-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #2c3e50;
-            margin-bottom: 0.5rem;
-        }
-        
-        .upload-subtitle {
-            color: #6c757d;
-            font-size: 1rem;
         }
         
         .file-card {
@@ -624,35 +1055,6 @@ if st.session_state.get('authentication_status'):
             font-size: 1.4rem;
             font-weight: 700;
             color: #2c3e50;
-        }
-        
-        .risk-badge {
-            padding: 0.6rem 1.5rem;
-            border-radius: 25px;
-            font-weight: 700;
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .risk-low {
-            background: linear-gradient(135deg, #4caf50, #66bb6a);
-            color: white;
-        }
-        
-        .risk-medium {
-            background: linear-gradient(135deg, #ff9800, #ffa726);
-            color: white;
-        }
-        
-        .risk-high {
-            background: linear-gradient(135deg, #ff5722, #ff7043);
-            color: white;
-        }
-        
-        .risk-critical {
-            background: linear-gradient(135deg, #f44336, #e57373);
-            color: white;
         }
         
         .info-grid {
@@ -769,8 +1171,7 @@ if st.session_state.get('authentication_status'):
     </style>
     """, unsafe_allow_html=True)
 
-    # ==================== API & ANALYZER SETUP ====================
-
+    # API Setup
     api_key_cycler = cycle(api_keys)
 
     def get_client():
@@ -790,59 +1191,15 @@ if st.session_state.get('authentication_status'):
                         "type": "object",
                         "description": "شامل اطلاعات اولیه گزارش و نتیجه‌گیری‌های اصلی در یک نگاه.",
                         "properties": {
-                            "نام_شرکت": {
-                            "type": "string",
-                            "description": "نام کامل شرکت از روی جلد گزارش."
-                            },
-                            "نام_حسابرس": {
-                            "type": "string",
-                            "description": "نام موسسه حسابرسی."
-                            },
-                            "دوره_مالی": {
-                            "type": "string",
-                            "description": "دوره مالی مورد رسیدگی، مثلا: 'سال مالی منتهی به ۲۹ اسفند ۱۳۹۸'."
-                            },
-                            "نوع_اظهارنظر": {
-                            "type": "string",
-                            "description": "یکی از موارد: مقبول، مشروط، مردود، عدم اظهارنظر.",
-                            "enum": [
-                                "مقبول",
-                                "مشروط",
-                                "مردود",
-                                "عدم اظهارنظر"
-                            ]
-                            },
-                            "سطح_ریسک_کلی_بنا_به_گزارش": {
-                            "type": "string",
-                            "description": "سطح ریسک کلی استنباط شده از گزارش حسابرس مستقل و بازرس قانونی بنا به متن گزارش و شواهد و آماره های بیان شده از دیدگاه حسابرسی",
-                            "enum": [
-                                "پایین",
-                                "متوسط",
-                                "بالا",
-                                "بحرانی"
-                            ]
-                            },
-                            "جزییات_سطح_ریسک_تعیین_شده": {
-                            "type": "string",
-                            "description": " جزییات و دلیل سطح ریسک کلی استنباط شده از گزارش ."
-                            },
-                            "نکات_کلیدی_و_نتیجه_گیری": {
-                            "type": "array",
-                            "description": "آرایه‌ای از ۳ رشته شامل مهم‌ترین یافته‌ها و نتیجه‌گیری‌ها.",
-                            "items": {
-                                "type": "string"
-                            }
-                            }
+                            "نام_شرکت": {"type": "string", "description": "نام کامل شرکت از روی جلد گزارش."},
+                            "نام_حسابرس": {"type": "string", "description": "نام موسسه حسابرسی."},
+                            "دوره_مالی": {"type": "string", "description": "دوره مالی مورد رسیدگی، مثلا: 'سال مالی منتهی به ۲۹ اسفند ۱۳۹۸'."},
+                            "نوع_اظهارنظر": {"type": "string", "description": "یکی از موارد: مقبول، مشروط، مردود، عدم اظهارنظر.", "enum": ["مقبول", "مشروط", "مردود", "عدم اظهارنظر"]},
+                            "سطح_ریسک_کلی_بنا_به_گزارش": {"type": "string", "description": "سطح ریسک کلی استنباط شده از گزارش حسابرس مستقل و بازرس قانونی بنا به متن گزارش و شواهد و آماره های بیان شده از دیدگاه حسابرسی", "enum": ["پایین", "متوسط", "بالا", "بحرانی"]},
+                            "جزییات_سطح_ریسک_تعیین_شده": {"type": "string", "description": " جزییات و دلیل سطح ریسک کلی استنباط شده از گزارش ."},
+                            "نکات_کلیدی_و_نتیجه_گیری": {"type": "array", "description": "آرایه‌ای از ۳ رشته شامل مهم‌ترین یافته‌ها و نتیجه‌گیری‌ها.", "items": {"type": "string"}}
                         },
-                        "required": [
-                            "نام_شرکت",
-                            "نام_حسابرس",
-                            "دوره_مالی",
-                            "نوع_اظهارنظر",
-                            "سطح_ریسک_کلی_بنا_به_گزارش",
-                            "جزییات_سطح_ریسک_تعیین_شده",
-                            "نکات_کلیدی_و_نتیجه_گیری"
-                        ]
+                        "required": ["نام_شرکت", "نام_حسابرس", "دوره_مالی", "نوع_اظهارنظر", "سطح_ریسک_کلی_بنا_به_گزارش", "جزییات_سطح_ریسک_تعیین_شده", "نکات_کلیدی_و_نتیجه_گیری"]
                         },
                         "بخش۲_تجزیه_تحلیل_گزارش": {
                         "type": "object",
@@ -851,66 +1208,35 @@ if st.session_state.get('authentication_status'):
                             "بند_اظهارنظر": {
                             "type": "object",
                             "properties": {
-                                "نوع": {
-                                "type": "string"
-                                },
-                                "خلاصه_دلایل": {
-                                "type": "string"
-                                }
+                                "نوع": {"type": "string"},
+                                "خلاصه_دلایل": {"type": "string"}
                             },
-                            "required": [
-                                "نوع",
-                                "خلاصه_دلایل"
-                            ]
+                            "required": ["نوع", "خلاصه_دلایل"]
                             },
                             "بند_مبانی_اظهارنظر": {
                             "type": "object",
                             "properties": {
-                                "موضوعیت_دارد": {
-                                "type": "boolean"
-                                },
+                                "موضوعیت_دارد": {"type": "boolean"},
                                 "موارد_مطرح_شده": {
                                 "type": "array",
                                 "items": {
                                     "type": "object",
                                     "properties": {
-                                    "شماره_مورد": {
-                                        "type": "integer"
+                                    "شماره_مورد": {"type": "integer"},
+                                    "عنوان": {"type": "string"},
+                                    "شرح": {"type": "string"},
+                                    "نوع_دلیل": {"type": "string", "enum": ["محدودیت در رسیدگی", "انحراف از استانداردهای حسابداری", "سایر"]}
                                     },
-                                    "عنوان": {
-                                        "type": "string"
-                                    },
-                                    "شرح": {
-                                        "type": "string"
-                                    },
-                                    "نوع_دلیل": {
-                                        "type": "string",
-                                        "enum": [
-                                        "محدودیت در رسیدگی",
-                                        "انحراف از استانداردهای حسابداری",
-                                        "سایر"
-                                        ]
-                                    }
-                                    },
-                                    "required": [
-                                    "شماره_مورد",
-                                    "عنوان",
-                                    "شرح",
-                                    "نوع_دلیل"
-                                    ]
+                                    "required": ["شماره_مورد", "عنوان", "شرح", "نوع_دلیل"]
                                 }
                                 }
                             },
-                            "required": [
-                                "موضوعیت_دارد"
-                            ]
+                            "required": ["موضوعیت_دارد"]
                             },
                             "بند_تاکید_بر_مطالب_خاص": {
                             "type": "object",
                             "properties": {
-                                "موضوعیت_دارد": {
-                                "type": "boolean"
-                                },
+                                "موضوعیت_دارد": {"type": "boolean"},
                                 "موارد_مطرح_شده": {
                                 "type": "array",
                                 "items": {
@@ -920,49 +1246,25 @@ if st.session_state.get('authentication_status'):
                                         "type": "object",
                                         "description": "ارجاع به شماره بند و صفحه مربوطه در گزارش اصلی.",
                                         "properties": {
-                                            "شماره_بند": {
-                                            "type": "string",
-                                            "description": "شماره بند مربوطه در گزارش حسابرس مستقل و بازرس قانونی .بین بند ها , قرار بده مانند ۲,۶"
+                                            "شماره_بند": {"type": "string", "description": "شماره بند مربوطه در گزارش حسابرس مستقل و بازرس قانونی .بین بند ها , قرار بده مانند ۲,۶"},
+                                        "شماره_صفحه": {"type": "string", "description": "شماره صفحه مربوطه در گزارش حسابرس مستقل و بازرس قانونی.چنانچه این مورد در چند بند به ان اشاره شده صفحات منطبق با بند را به ترتیب بند برگردان بین صفحات , قرار بده مانند ۱,۵"}
                                         },
-                                        "شماره_صفحه": {
-                                            "type": "string",
-                                            "description": "شماره صفحه مربوطه در گزارش حسابرس مستقل و بازرس قانونی.چنانچه این مورد در چند بند به ان اشاره شده صفحات منطبق با بند را به ترتیب بند برگردان بین صفحات , قرار بده مانند ۱,۵"
-                                        }
-                                        },
-                                        "required": [
-                                        "شماره_بند",
-                                        "شماره_صفحه"
-                                        ]
+                                        "required": ["شماره_بند", "شماره_صفحه"]
                                     },
-                                    "عنوان": {
-                                        "type": "string"
+                                    "عنوان": {"type": "string"},
+                                    "شرح": {"type": "string"},
+                                    "ریسک_برجسته_شده": {"type": "string"}
                                     },
-                                    "شرح": {
-                                        "type": "string"
-                                    },
-                                    "ریسک_برجسته_شده": {
-                                        "type": "string"
-                                    }
-                                    },
-                                    "required": [
-                                    "ارجاع",
-                                    "عنوان",
-                                    "شرح",
-                                    "ریسک_برجسته_شده"
-                                    ]
+                                    "required": ["ارجاع", "عنوان", "شرح", "ریسک_برجسته_شده"]
                                 }
                                 }
                             },
-                            "required": [
-                                "موضوعیت_دارد"
-                            ]
+                            "required": ["موضوعیت_دارد"]
                             },
                             "گزارش_رعایت_الزامات_قانونی": {
                             "type": "object",
                             "properties": {
-                                "موضوعیت_دارد": {
-                                "type": "boolean"
-                                },
+                                "موضوعیت_دارد": {"type": "boolean"},
                                 "تخلفات": {
                                 "type": "array",
                                 "items": {
@@ -972,800 +1274,11 @@ if st.session_state.get('authentication_status'):
                                         "type": "object",
                                         "description":  "ارجاع به شماره بند و صفحه مربوطه در گزارش اصلی.",
                                         "properties": {
-                                            "شماره_بند": {
-                                            "type": "string",
-                                            "description": "شماره بند مربوطه در گزارش حسابرس مستقل و بازرس قانونی .بین بند ها , قرار بده مانند ۲,۶"
+                                            "شماره_بند": {"type": "string", "description": "شماره بند مربوطه در گزارش حسابرس مستقل و بازرس قانونی .بین بند ها , قرار بده مانند ۲,۶"},
+                                        "شماره_صفحه": {"type": "string", "description": "شماره صفحه مربوطه در گزارش حسابرس مستقل و بازرس قانونی.چنانچه این مورد در چند بند به ان اشاره شده صفحات منطبق با بند را به ترتیب بند برگردان بین صفحات , قرار بده مانند ۱,۵"}
                                         },
-                                        "شماره_صفحه": {
-                                            "type": "string",
-                                            "description": "شماره صفحه مربوطه در گزارش حسابرس مستقل و بازرس قانونی.چنانچه این مورد در چند بند به ان اشاره شده صفحات منطبق با بند را به ترتیب بند برگردان بین صفحات , قرار بده مانند ۱,۵"
-                                        }
-                                        },
-                                        "required": [
-                                        "شماره_بند",
-                                        "شماره_صفحه"
-                                        ]
+                                        "required": ["شماره_بند", "شماره_صفحه"]
                                     },
-                                    "عنوان_تخلف": {
-                                        "type": "string"
-                                    },
-                                    "شرح": {
-                                        "type": "string"
-                                    },
-                                    "مبانی_قانونی_و_استانداردها": {
-                                        "type": "array",
-                                        "items": {
-                                        "type": "string",
-                                        "enum": [
-                                            "قانون پولی و بانکی کشور",
-                                            "قانون عملیات بانکی بدون رباً",
-                                            "آیین نامه ها و دستورالعملهای بانک مرکزی (مهمترین بخش)",
-                                            "اساسنامه بانک",
-                                            "قانون تجارت (در موارد مرتبط)",
-                                            "استانداردهای حسابداری",
-                                            "استانداردهای حسابرسی"
-                                        ]
-                                        }
-                                    }
-                                    },
-                                    "required": [
-                                    "ارجاع",
-                                    "عنوان_تخلف",
-                                    "شرح",
-                                    "مبانی_قانونی_و_استانداردها"
-                                    ]
-                                }
-                                }
-                            },
-                            "required": [
-                                "موضوعیت_دارد"
-                            ]
-                            }
-                        }
-                        },
-                        "بخش۳_چک_لیست_موضوعی": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                            "موضوع": {
-                                "type": "string",
-                                "enum": [
-                                "کفایت سرمایه",
-                                "تسعیر ارز و عملیات خارجی",
-                                "مالیات و جرائم مالیاتی",
-                                "تجدید ارزیابی دارایی‌های ثابت و نامشهود",
-                                "تعهدات ارزی و اختلاف با بانک مرکزی",
-                                "تهاتر(Barter)",
-                                "عدم دریافت تأییدیه‌های حسابداری",
-                                "مغایرت‌های حساب جاری بانک مرکزی",
-                                "نسبت کفایت سرمایه",
-                                "نسبت ها در چارچوب بازل(bazel Accords)",
-                                "(Facilities and Credits)تسهیلات و اعتبارات",
-                                "سود سهام دولت",
-                                "پروژه‌های اجرایی ناتمام",
-                                "معاملات با اشخاص وابسته",
-                                "ذخیره گیری"
-                                ]
-                            },
-                            "در_گزارش_آمده": {
-                                "type": "boolean"
-                            },
-                            "وضعیت": {
-                                "type": "string",
-                                "enum": [
-                                "مصداق ندارد",
-                                "بررسی شده - ریسک خاصی گزارش نشده",
-                                "مسئله کلیدی منجر به اظهارنظر مشروط",
-                                "ریسک بحرانی"
-                                ]
-                            },
-                            "جزئیات": {
-                                "type": "string"
-                            },
-                            "ارجاع": {
-                                "type": "object",
-                                "description": "ارجاع به شماره بند و صفحه مربوطه در گزارش اصلی.",    
-                                "properties": {
-                                "شماره_بند": {
-                                    "type": "string",
-                                    "description": "شماره بند مربوطه در گزارش حسابرس مستقل و بازرس قانونی .بین بند ها , قرار بده مانند ۲,۶"
-                                },
-                                "شماره_صفحه": {
-                                    "type": "string",
-                                    "description": "شماره صفحه مربوطه در گزارش حسابرس مستقل و بازرس قانونی.چنانچه این مورد در چند بند به ان اشاره شده صفحات منطبق با بند را به ترتیب بند برگردان بین صفحات , قرار بده مانند ۱,۵"
-                                }
-                                }
-                            }
-                            },
-                            "required": [
-                            "موضوع",
-                            "در_گزارش_آمده",
-                            "وضعیت",
-                            "جزئیات",
-                            "ارجاع"
-                            ]
-                        }
-                        }
-                    }
-                    }
-                },
-                "required": [
-                    "تحلیل_جامع_گزارش_حسابرسی"
-                ]
-                }
-        
-        def extract_table_from_page(self, file_content):
-            """Extract analysis from PDF using Gemini API"""
-            client = get_client()
-            
-            prompt = """
-            لطفاً گزارش حسابرس مستقل و بازرس قانونی ارائه شده را تحلیل کنید و اطلاعات را طبق ساختار JSON مشخص شده استخراج کنید.
-            تمام فیلدهای required را با دقت تکمیل کنید و از enum های تعریف شده استفاده کنید.
-            """
-            
-            response = client.models.generate_content(
-                model="gemini-2.5-pro",
-                contents=[
-                    types.Part.from_bytes(data=file_content, mime_type="application/pdf"),
-                    prompt
-                ],
-                config={
-                    'system_instruction': """
-                    شما به عنوان یک تحلیلگر مالی و حسابرس خبره عمل می‌کنید. وظیفه شما تحلیل گزارش حسابرس مستقل و بازرس قانونی آن است . دقت کن که در تحلیل ها و ارجاعات به صفحات و بندها از گزارش حسابرس مستقل و بازرس قانونی استفاده کن و به متن صورتمالی مراجعه نکن , لطفاً تمام فیلدها را با دقت و بر اساس اطلاعات موجود در سند تکمیل کنید
-                    """,
-                    "response_mime_type": "application/json",
-                    "response_schema": self.response_schema,
-                    "temperature": 0.5
-                }
-            )
-            
-            return json.loads(response.text)
-
-    # ==================== MAIN APPLICATION ====================
-
-    def main():
-        if 'uploaded_files' not in st.session_state:
-            st.session_state.uploaded_files = None
-        if 'results' not in st.session_state:
-            st.session_state.results = None
-        
-        st.markdown("""
-        <div class="main-header">
-            <h1 class="main-title">📊 سیستم تحلیل هوشمند صورت‌های مالی</h1>
-            <p class="main-subtitle">تحلیل حرفه‌ای گزارش‌های حسابرسی با هوش مصنوعی</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        tab1, tab2 = st.tabs(["📁 بارگذاری فایل", "⚙️ پردازش و نتایج"])
-        
-        with tab1:
-            st.markdown("""
-            <div class="alert-box alert-info">
-                <div class="alert-title">📌 راهنمای بارگذاری فایل</div>
-                <div class="alert-content">
-                    <p><strong>فرمت‌های پشتیبانی شده:</strong></p>
-                    <ul>
-                        <li>✅ فایل‌های PDF با کیفیت بالا</li>
-                        <li>✅ فایل‌های ZIP حاوی چندین PDF</li>
-                        <li>✅ حداکثر حجم هر فایل: 50 مگابایت</li>
-                    </ul>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                upload_method = st.radio(
-                    "روش بارگذاری را انتخاب کنید:",
-                    ["📄 فایل‌های جداگانه", "📦 فایل ZIP"],
-                    horizontal=False
-                )
-            
-            uploaded_files = None
-            if upload_method == "📄 فایل‌های جداگانه":
-                
-                
-                uploaded_files = st.file_uploader(
-                    "انتخاب فایل‌ها",
-                    type=['pdf'],
-                    accept_multiple_files=True,
-                    label_visibility="collapsed"
-                )
-            else:
-                st.markdown("""
-                <div class="upload-zone">
-                    <div class="upload-icon">📦</div>
-                    <div class="upload-title">فایل ZIP را بارگذاری کنید</div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                zip_file = st.file_uploader(
-                    "انتخاب فایل ZIP",
-                    type=['zip'],
-                    label_visibility="collapsed"
-                )
-                
-                if zip_file:
-                    try:
-                        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-                            pdf_files = []
-                            for file_info in zip_ref.filelist:
-                                if file_info.filename.lower().endswith('.pdf'):
-                                    pdf_content = zip_ref.read(file_info.filename)
-                                    pdf_files.append({
-                                        'name': os.path.basename(file_info.filename),
-                                        'content': pdf_content
-                                    })
-                        uploaded_files = pdf_files
-                        st.markdown(f"""
-                        <div class="alert-box alert-success">
-                            <div class="alert-title">✅ استخراج موفق</div>
-                            <div class="alert-content">{len(pdf_files)} فایل PDF از ZIP استخراج شد</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    except Exception as e:
-                        st.markdown(f"""
-                        <div class="alert-box alert-danger">
-                            <div class="alert-title">❌ خطا در استخراج</div>
-                            <div class="alert-content">{str(e)}</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-            
-            if uploaded_files:
-                st.session_state.uploaded_files = uploaded_files
-                
-                st.markdown("""
-                <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📊 آمار فایل‌های بارگذاری شده</h3>
-                """, unsafe_allow_html=True)
-                
-                col1, col2, col3 = st.columns(3)
-                
-                if isinstance(uploaded_files[0], dict):
-                    total_size = sum(len(f['content']) for f in uploaded_files)
-                else:
-                    total_size = sum(f.size for f in uploaded_files)
-                
-                with col1:
-                    st.markdown(f"""
-                    <div class="modern-metric" style="--gradient-start: #667eea; --gradient-end: #764ba2;">
-                        <div class="metric-icon">📁</div>
-                        <div class="metric-value">{len(uploaded_files)}</div>
-                        <div class="metric-label">تعداد فایل</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col2:
-                    st.markdown(f"""
-                    <div class="modern-metric" style="--gradient-start: #f093fb; --gradient-end: #f5576c;">
-                        <div class="metric-icon">💾</div>
-                        <div class="metric-value">{total_size / (1024*1024):.1f}</div>
-                        <div class="metric-label">مگابایت</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col3:
-                    st.markdown(f"""
-                    <div class="modern-metric" style="--gradient-start: #4facfe; --gradient-end: #00f2fe;">
-                        <div class="metric-icon">✅</div>
-                        <div class="metric-value">آماده</div>
-                        <div class="metric-label">وضعیت</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                st.markdown("""
-                <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📋 لیست فایل‌ها</h3>
-                """, unsafe_allow_html=True)
-                
-                for i, file in enumerate(uploaded_files):
-                    if isinstance(file, dict):
-                        filename = file['name']
-                        file_size = len(file['content']) / 1024
-                    else:
-                        filename = file.name
-                        file_size = file.size / 1024
-                    
-                    st.markdown(f"""
-                    <div class="file-card">
-                        <div class="file-info">
-                            <div class="file-icon">📄</div>
-                            <div>
-                                <div class="file-name">{i+1}. {filename}</div>
-                                <div class="file-size">{file_size:.1f} کیلوبایت</div>
-                            </div>
-                        </div>
-                        <div class="file-status status-ready">✓ آماده</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                st.markdown("""
-                <div class="nav-helper">
-                    <div class="nav-helper-title">🎯 مرحله بعدی</div>
-                    <div class="nav-helper-text">برای شروع تحلیل و مشاهده نتایج، به تب "پردازش و نتایج" بروید ⬅️</div>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown("""
-                <div class="alert-box alert-warning">
-                    <div class="alert-title">⚠️ هنوز فایلی بارگذاری نشده</div>
-                    <div class="alert-content">لطفاً فایل‌های PDF خود را بارگذاری کنید</div>
-                </div>
-                """, unsafe_allow_html=True)
-        
-        with tab2:
-            if not st.session_state.uploaded_files:
-                st.markdown("""
-                <div class="alert-box alert-warning">
-                    <div class="alert-title">⚠️ فایلی برای پردازش وجود ندارد</div>
-                    <div class="alert-content">لطفاً ابتدا به تب "بارگذاری فایل" بروید</div>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown("""
-                <div class="alert-box alert-info">
-                    <div class="alert-title">🤖 تحلیل هوشمند با AI</div>
-                    <div class="alert-content">
-                        <ul>
-                            <li>🔍 استخراج خودکار اطلاعات کلیدی</li>
-                            <li>📊 ارزیابی سطح ریسک</li>
-                            <li>📋 تحلیل بند به بند گزارش</li>
-                        </ul>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    st.markdown(f"""
-                    <div class="modern-metric" style="--gradient-start: #667eea; --gradient-end: #764ba2;">
-                        <div class="metric-icon">📁</div>
-                        <div class="metric-value">{len(st.session_state.uploaded_files)}</div>
-                        <div class="metric-label">فایل آماده</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col2:
-                    estimated_time = len(st.session_state.uploaded_files) * 30
-                    st.markdown(f"""
-                    <div class="modern-metric" style="--gradient-start: #f093fb; --gradient-end: #f5576c;">
-                        <div class="metric-icon">⏱️</div>
-                        <div class="metric-value">{estimated_time}</div>
-                        <div class="metric-label">ثانیه</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col3:
-                    st.markdown("""
-                    <div class="modern-metric" style="--gradient-start: #4facfe; --gradient-end: #00f2fe;">
-                        <div class="metric-icon">🤖</div>
-                        <div class="metric-value">AI</div>
-                        <div class="metric-label">تحلیل هوشمند</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                if st.button("🚀 شروع تحلیل", type="primary", key="start_analysis"):
-                    analyzer = FinancialAnalyzer()
-                    results = []
-                    
-                    progress_bar = st.progress(0)
-                    status_text = st.empty()
-                    time_text = st.empty()
-                    
-                    total_files = len(st.session_state.uploaded_files)
-                    estimated_time_per_file = 30
-                    
-                    for i, file in enumerate(st.session_state.uploaded_files):
-                        try:
-                            if isinstance(file, dict):
-                                filename = file['name']
-                                file_content = file['content']
-                            else:
-                                filename = file.name
-                                file_content = file.getvalue()
-                            
-                            remaining_files = total_files - i
-                            remaining_time = remaining_files * estimated_time_per_file
-                            
-                            status_text.markdown(f"""
-                            <div class="alert-box alert-info">
-                                <div class="alert-title">⏳ در حال پردازش...</div>
-                                <div class="alert-content">
-                                    <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">📄 فایل {i+1} از {total_files}: <strong>{filename}</strong></p>
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            
-                            time_text.markdown(f"""
-                            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                                        padding: 1.5rem; border-radius: 15px; text-align: center; 
-                                        color: white; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-                                        margin-bottom: 1rem;">
-                                <div style="font-size: 3rem; margin-bottom: 0.5rem;">⏳</div>
-                                <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 0.3rem;">
-                                    {remaining_time} ثانیه
-                                </div>
-                                <div style="font-size: 1rem; opacity: 0.9;">
-                                    زمان تقریبی باقیمانده
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            
-                            start_time = time.time()
-                            result = analyzer.extract_table_from_page(file_content)
-                            results.append((filename, result))
-                            
-                        except Exception as e:
-                            error_result = {"error": f"خطا: {str(e)}"}
-                            results.append((filename, error_result))
-                        
-                        progress_bar.progress((i + 1) / total_files)
-                    
-                    st.session_state.results = results
-                    
-                    time_text.empty()
-                    status_text.markdown(f"""
-                    <div class="alert-box alert-success">
-                        <div class="alert-title">🎉 تحلیل تکمیل شد!</div>
-                        <div class="alert-content">{len(results)} فایل پردازش شد</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                if st.session_state.results:
-                    st.markdown("""
-                    <hr style="margin: 3rem 0; border: none; height: 2px; background: linear-gradient(90deg, transparent, #667eea, transparent);">
-                    """, unsafe_allow_html=True)
-                    
-                    results = st.session_state.results
-                    
-                    successful = sum(1 for _, result in results if 'error' not in result)
-                    failed = len(results) - successful
-                    success_rate = (successful / len(results)) * 100 if results else 0
-                    
-                    col1, col2, col3, col4 = st.columns(4)
-                    
-                    with col1:
-                        st.markdown(f"""
-                        <div class="modern-metric" style="--gradient-start: #667eea; --gradient-end: #764ba2;">
-                            <div class="metric-icon">📊</div>
-                            <div class="metric-value">{len(results)}</div>
-                            <div class="metric-label">کل فایل‌ها</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col2:
-                        st.markdown(f"""
-                        <div class="modern-metric" style="--gradient-start: #4caf50; --gradient-end: #66bb6a;">
-                            <div class="metric-icon">✅</div>
-                            <div class="metric-value">{successful}</div>
-                            <div class="metric-label">موفق</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col3:
-                        st.markdown(f"""
-                        <div class="modern-metric" style="--gradient-start: #f44336; --gradient-end: #e57373;">
-                            <div class="metric-icon">❌</div>
-                            <div class="metric-value">{failed}</div>
-                            <div class="metric-label">ناموفق</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col4:
-                        st.markdown(f"""
-                        <div class="modern-metric" style="--gradient-start: #f093fb; --gradient-end: #f5576c;">
-                            <div class="metric-icon">📈</div>
-                            <div class="metric-value">{success_rate:.0f}%</div>
-                            <div class="metric-label">نرخ موفقیت</div>
-                        </div>
-                                                        """, unsafe_allow_html=True)
-                    
-                    # ==================== DOWNLOAD SECTION ====================
-                    st.markdown("""
-                    <hr style="margin: 3rem 0; border: none; height: 2px; background: linear-gradient(90deg, transparent, #667eea, transparent);">
-                    """, unsafe_allow_html=True)
-                    
-                    st.markdown("""
-                    <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📥 دانلود نتایج</h3>
-                    """, unsafe_allow_html=True)
-                    
-                    for filename, result in results:
-                        if 'error' in result:
-                            st.markdown(f"""
-                            <div class="result-card" style="border-top-color: #f44336;">
-                                <div class="result-header">
-                                    <div class="result-title">❌ {filename}</div>
-                                </div>
-                                <div class="alert-content" style="color: #f44336;">{result['error']}</div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                        else:
-                            try:
-                                analysis = result['تحلیل_جامع_گزارش_حسابرسی']['بخش۱_خلاصه_و_اطلاعات_کلیدی']
-                                company_name = analysis['نام_شرکت']
-                                auditor_name = analysis['نام_حسابرس']
-                                opinion_type = analysis['نوع_اظهارنظر']
-                                risk_level = analysis['سطح_ریسک_کلی_بنا_به_نظر_مدل_زبانی']
-                                financial_year = analysis['دوره_مالی']
-                                
-                                risk_classes = {
-                                    'پایین': 'risk-low',
-                                    'متوسط': 'risk-medium',
-                                    'بالا': 'risk-high',
-                                    'بحرانی': 'risk-critical'
-                                }
-                                risk_class = risk_classes.get(risk_level, 'risk-low')
-                                
-                                risk_icons = {
-                                    'پایین': '🟢',
-                                    'متوسط': '🟡',
-                                    'بالا': '🟠',
-                                    'بحرانی': '🔴'
-                                }
-                                risk_icon = risk_icons.get(risk_level, '⚪')
-                                
-                                risk_colors = {
-                                    'پایین': '#4caf50',
-                                    'متوسط': '#ff9800',
-                                    'بالا': '#f44336',
-                                    'بحرانی': '#f44336'
-                                }
-                                border_color = risk_colors.get(risk_level, '#4caf50')
-                                
-                                risk_card_classes = {
-                                    'پایین': 'risk-card-low',
-                                    'متوسط': 'risk-card-medium',
-                                    'بالا': 'risk-card-high',
-                                    'بحرانی': 'risk-card-critical'
-                                }
-                                risk_card_class = risk_card_classes.get(risk_level, 'risk-card-low')
-                                
-                                st.markdown(f"""
-                                <div class="result-card" style="border-top-color: {border_color};">
-                                    <div class="result-header">
-                                        <div class="result-title">✅ {filename}</div>
-                                    </div>
-                                    <div class="info-grid">
-                                        <div class="info-item">
-                                            <div class="info-label">🏢 نام شرکت</div>
-                                            <div class="info-value">{company_name}</div>
-                                        </div>
-                                        <div class="info-item">
-                                            <div class="info-label">📅 دوره مالی</div>
-                                            <div class="info-value">{financial_year}</div>
-                                        </div>
-                                        <div class="info-item">
-                                            <div class="info-label">👨‍💼 حسابرس</div>
-                                            <div class="info-value">{auditor_name}</div>
-                                        </div>
-                                    </div>
-                                    <div class="info-grid" style="margin-top: 1rem;">
-                                        <div class="info-item">
-                                            <div class="info-label">📋 نوع اظهارنظر</div>
-                                            <div class="info-value">{opinion_type}</div>
-                                        </div>
-                                        <div class="risk-card {risk_card_class}">
-                                            <div class="info-label">🎯 سطح ریسک</div>
-                                            <div class="info-value" style="font-size: 1.5rem;">{risk_icon} {risk_level}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                """, unsafe_allow_html=True)
-                            except:
-                                st.markdown(f"""
-                                <div class="result-card" style="border-top-color: #4caf50;">
-                                    <div class="result-header">
-                                        <div class="result-title">✅ {filename}</div>
-                                    </div>
-                                    <div class="alert-content">تحلیل موفق</div>
-                                </div>
-                                """, unsafe_allow_html=True)
-                    
-                    # ==================== DOWNLOAD SECTION ====================
-                    st.markdown("""
-                    <hr style="margin: 3rem 0; border: none; height: 2px; background: linear-gradient(90deg, transparent, #667eea, transparent);">
-                    """, unsafe_allow_html=True)
-                    
-                    st.markdown("""
-                    <h3 style="color: #2c3e50; margin: 2rem 0 1rem 0;">📥 دانلود نتایج</h3>
-                    """, unsafe_allow_html=True)
-                    
-                    # Prepare comprehensive Excel data with all JSON fields
-                    output = BytesIO()
-                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                        
-                        # Sheet 1: خلاصه اطلاعات
-                        summary_data = []
-                        for filename, result in results:
-                            if 'error' not in result:
-                                try:
-                                    analysis = result['تحلیل_جامع_گزارش_حسابرسی']['بخش۱_خلاصه_و_اطلاعات_کلیدی']
-                                    summary_data.append({
-                                        'نام فایل': filename,
-                                        'نام شرکت': analysis.get('نام_شرکت', ''),
-                                        'دوره مالی': analysis.get('دوره_مالی', ''),
-                                        'نام حسابرس': analysis.get('نام_حسابرس', ''),
-                                        'نوع اظهارنظر': analysis.get('نوع_اظهارنظر', ''),
-                                        'سطح ریسک (بازرس)': analysis.get('سطح_ریسک_کلی_بنا_به_نظر_بازرس', ''),
-                                        'سطح ریسک (مدل AI)': analysis.get('سطح_ریسک_کلی_بنا_به_نظر_مدل_زبانی', ''),
-                                        'جزییات سطح ریسک': analysis.get('جزییات_سطح_ریسک_تعیین_شده_توسط_مدل', ''),
-                                        'نکات کلیدی': '\n'.join(analysis.get('نکات_کلیدی_و_نتیجه_گیری', []))
-                                    })
-                                except:
-                                    summary_data.append({
-                                        'نام فایل': filename,
-                                        'نام شرکت': 'خطا در استخراج',
-                                        'دوره مالی': '',
-                                        'نام حسابرس': '',
-                                        'نوع اظهارنظر': '',
-                                        'سطح ریسک (بازرس)': '',
-                                        'سطح ریسک (مدل AI)': '',
-                                        'جزییات سطح ریسک': '',
-                                        'نکات کلیدی': ''
-                                    })
-                            else:
-                                summary_data.append({
-                                    'نام فایل': filename,
-                                    'نام شرکت': 'خطا',
-                                    'دوره مالی': '',
-                                    'نام حسابرس': '',
-                                    'نوع اظهارنظر': '',
-                                    'سطح ریسک (بازرس)': '',
-                                    'سطح ریسک (مدل AI)': '',
-                                    'جزییات سطح ریسک': result.get('error', ''),
-                                    'نکات کلیدی': ''
-                                })
-                        
-                        if summary_data:
-                            df_summary = pd.DataFrame(summary_data)
-                            df_summary.to_excel(writer, index=False, sheet_name='خلاصه اطلاعات')
-                            
-                            worksheet = writer.sheets['خلاصه اطلاعات']
-                            for column in worksheet.columns:
-                                max_length = 0
-                                column_letter = column[0].column_letter
-                                for cell in column:
-                                    try:
-                                        if len(str(cell.value)) > max_length:
-                                            max_length = len(str(cell.value))
-                                    except:
-                                        pass
-                                adjusted_width = min(max_length + 2, 60)
-                                worksheet.column_dimensions[column_letter].width = adjusted_width
-                        
-                        # Sheet 2: داده کامل JSON
-                        json_data = []
-                        for filename, result in results:
-                            if 'error' not in result:
-                                try:
-                                    # Flatten the entire JSON structure
-                                    json_str = json.dumps(result, ensure_ascii=False, indent=2)
-                                    json_data.append({
-                                        'نام فایل': filename,
-                                        'داده کامل JSON': json_str
-                                    })
-                                except:
-                                    json_data.append({
-                                        'نام فایل': filename,
-                                        'داده کامل JSON': 'خطا در تبدیل JSON'
-                                    })
-                            else:
-                                json_data.append({
-                                    'نام فایل': filename,
-                                    'داده کامل JSON': result.get('error', '')
-                                })
-                        
-                        if json_data:
-                            df_json = pd.DataFrame(json_data)
-                            df_json.to_excel(writer, index=False, sheet_name='داده کامل JSON')
-                            
-                            worksheet = writer.sheets['داده کامل JSON']
-                            worksheet.column_dimensions['A'].width = 30
-                            worksheet.column_dimensions['B'].width = 100
-                            
-                            # Enable text wrapping for JSON column
-                            from openpyxl.styles import Alignment
-                            for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row, min_col=2, max_col=2):
-                                for cell in row:
-                                    cell.alignment = Alignment(wrap_text=True, vertical='top')
-                        
-                        # Sheet 3: نکات کلیدی (جداگانه)
-                        notes_data = []
-                        for filename, result in results:
-                            if 'error' not in result:
-                                try:
-                                    analysis = result['تحلیل_جامع_گزارش_حسابرسی']['بخش۱_خلاصه_و_اطلاعات_کلیدی']
-                                    notes = analysis.get('نکات_کلیدی_و_نتیجه_گیری', [])
-                                    for i, note in enumerate(notes, 1):
-                                        notes_data.append({
-                                            'نام فایل': filename,
-                                            'نام شرکت': analysis.get('نام_شرکت', ''),
-                                            'ردیف': i,
-                                            'نکته کلیدی': note
-                                        })
-                                except:
-                                    pass
-                        
-                        if notes_data:
-                            df_notes = pd.DataFrame(notes_data)
-                            df_notes.to_excel(writer, index=False, sheet_name='نکات کلیدی')
-                            
-                            worksheet = writer.sheets['نکات کلیدی']
-                            for column in worksheet.columns:
-                                max_length = 0
-                                column_letter = column[0].column_letter
-                                for cell in column:
-                                    try:
-                                        if len(str(cell.value)) > max_length:
-                                            max_length = len(str(cell.value))
-                                    except:
-                                        pass
-                                adjusted_width = min(max_length + 2, 80)
-                                worksheet.column_dimensions[column_letter].width = adjusted_width
-                        
-                        # Sheet 4: مقایسه سطح ریسک
-                        risk_comparison_data = []
-                        for filename, result in results:
-                            if 'error' not in result:
-                                try:
-                                    analysis = result['تحلیل_جامع_گزارش_حسابرسی']['بخش۱_خلاصه_و_اطلاعات_کلیدی']
-                                    risk_comparison_data.append({
-                                        'نام فایل': filename,
-                                        'نام شرکت': analysis.get('نام_شرکت', ''),
-                                        'دوره مالی': analysis.get('دوره_مالی', ''),
-                                        'سطح ریسک (نظر بازرس)': analysis.get('سطح_ریسک_کلی_بنا_به_نظر_بازرس', ''),
-                                        'سطح ریسک (نظر مدل AI)': analysis.get('سطح_ریسک_کلی_بنا_به_نظر_مدل_زبانی', ''),
-                                        'توافق ریسک': 'بله' if analysis.get('سطح_ریسک_کلی_بنا_به_نظر_بازرس') == analysis.get('سطح_ریسک_کلی_بنا_به_نظر_مدل_زبانی') else 'خیر',
-                                        'جزییات تعیین ریسک توسط مدل': analysis.get('جزییات_سطح_ریسک_تعیین_شده_توسط_مدل', '')
-                                    })
-                                except:
-                                    pass
-                        
-                        if risk_comparison_data:
-                            df_risk = pd.DataFrame(risk_comparison_data)
-                            df_risk.to_excel(writer, index=False, sheet_name='مقایسه سطح ریسک')
-                            
-                            worksheet = writer.sheets['مقایسه سطح ریسک']
-                            for column in worksheet.columns:
-                                max_length = 0
-                                column_letter = column[0].column_letter
-                                for cell in column:
-                                    try:
-                                        if len(str(cell.value)) > max_length:
-                                            max_length = len(str(cell.value))
-                                    except:
-                                        pass
-                                adjusted_width = min(max_length + 2, 70)
-                                worksheet.column_dimensions[column_letter].width = adjusted_width
-                    
-                    excel_file = output.getvalue()
-                    
-                    col1, col2, col3 = st.columns([1, 2, 1])
-                    with col2:
-                        st.download_button(
-                            label="📥 دانلود فایل اکسل کامل",
-                            data=excel_file,
-                            file_name=f"تحلیل_کامل_مالی_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            use_container_width=True
-                        )
-                    
-                    st.markdown(f"""
-                    <div class="alert-box alert-success">
-                        <div class="alert-title">✅ آماده دانلود</div>
-                        <div class="alert-content">
-                            <p><strong>فایل اکسل شامل {len(results)} گزارش در 4 شیت جداگانه:</strong></p>
-                            <ul>
-                                <li>📊 <strong>شیت 1:</strong> خلاصه اطلاعات کلیدی</li>
-                                <li>💾 <strong>شیت 2:</strong> داده کامل JSON (ساختار کامل پاسخ)</li>
-                                <li>📝 <strong>شیت 3:</strong> نکات کلیدی (جدول جداگانه)</li>
-                                <li>⚖️ <strong>شیت 4:</strong> مقایسه سطح ریسک (بازرس vs AI)</li>
-                            </ul>
-                            <p style="margin-top: 1rem;">✨ تمامی فیلدهای JSON در فایل اکسل موجود است</p>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-    if __name__ == "__main__":
-        main()
-
+                                    "عنوان_تخلف": {"type": "string"},
+                                    "شرح": {"type": "string"},
+                                    "مبانی_قانونی_و_است
