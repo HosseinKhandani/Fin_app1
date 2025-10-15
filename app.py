@@ -1747,34 +1747,7 @@ if st.session_state.get('authentication_status') == True:
             </div>
             """, unsafe_allow_html=True)
         
-        # 4. Detailed Risk-Opinion Matrix
-        st.markdown("""
-        <div class="content-card" style="background: white; margin-top: 2rem;">
-            <h3 style="color: #667eea; margin-bottom: 1rem; font-size: 1.3rem; font-weight: 600;">
-                📊 ماتریس ریسک و اظهارنظر
-            </h3>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Create matrix data
-        matrix_data = []
-        for item in summary_data:
-            matrix_data.append({
-                'شرکت': item['شرکت'],
-                'سطح_ریسک': item['سطح_ریسک'],
-                'اظهارنظر': item['اظهارنظر']
-            })
-        
-        df_matrix = pd.DataFrame(matrix_data)
-        
-        # Group by risk and opinion
-        grouped = df_matrix.groupby(['سطح_ریسک', 'اظهارنظر']).size().reset_index(name='تعداد')
-        
-        st.dataframe(
-            grouped,
-            use_container_width=True,
-            hide_index=True
-        )
+       
 
 
 
@@ -2090,6 +2063,7 @@ if st.session_state.get('authentication_status') == True:
             
     if __name__ == "__main__":
         main()
+
 
 
 
