@@ -1662,7 +1662,7 @@ if st.session_state.get('authentication_status') == True:
         if 'processing' not in st.session_state:
             st.session_state.processing = False
         if 'uploaded_files' not in st.session_state:
-            st.session_state.uploaded_files = False
+            st.session_state.uploaded_files = True
     
     # Create header
     create_header()
@@ -1809,6 +1809,7 @@ if st.session_state.get('authentication_status') == True:
             
     if __name__ == "__main__":
         main()
+
 
 
 
