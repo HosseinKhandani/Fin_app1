@@ -2015,54 +2015,55 @@ if st.session_state.get('authentication_status') == True:
                 st.markdown('</div>', unsafe_allow_html=True)
 
     with tab2:
-    # Guide box for analysis tab
-    st.markdown("""
-    <div class="content-card" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: #2C3E50;">
-        <h3 style="color: #2C3E50; margin-bottom: 1rem;">📊 راهنمای تحلیل و گزارش</h3>
-        <p><strong>📈 این بخش شامل:</strong></p>
-        <ul style="padding-right: 1.5rem;">
-            <li>📊 نمایش نتایج تحلیل هوشمند</li>
-            <li>🏢 اطلاعات شرکت‌ها و دوره مالی</li>
-            <li>⚠️ سطح ریسک و اظهارنظر حسابرس</li>
-            <li>📥 دانلود گزارش‌های Excel</li>
-        </ul>
-        <p><strong>💡 نکته:</strong> پس از تحلیل، می‌توانید نتایج را به صورت Excel دانلود کنید.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # ایجاد Container برای محتوای دینامیک
-    main_container = st.container()
-    
-    with main_container:
-        # Process button
-        if st.session_state.get('uploaded_files') and st.session_state.uploaded_files:
-            if st.button("🚀 شروع تحلیل", type="primary", key="process_btn"):
-                # پاک کردن نتایج قبلی
-                st.session_state.results = None
-                
-                # شروع پردازش
-                st.session_state.results = process_files(st.session_state.uploaded_files)
-                
-                # نمایش مجدد
-                st.rerun()
-        else:
-            st.markdown("""
-            <div class="content-card" style="text-align: center; padding: 2rem; background: #FFF3CD; border-right: 4px solid #FFC107;">
-                <h4 style="color: #856404; margin: 0;">⚠️ ابتدا فایل‌های خود را بارگذاری کنید</h4>
-                <p style="color: #856404; margin: 0.5rem 0 0 0;">لطفاً به تب "بارگذاری فایل" بروید و فایل‌های PDF را انتخاب کنید.</p>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    # نمایش نتایج
-    if st.session_state.get('results'):
-        create_results_section(st.session_state.results)
-    
+        # Guide box for analysis tab
+        st.markdown("""
+        <div class="content-card" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: #2C3E50;">
+            <h3 style="color: #2C3E50; margin-bottom: 1rem;">📊 راهنمای تحلیل و گزارش</h3>
+            <p><strong>📈 این بخش شامل:</strong></p>
+            <ul style="padding-right: 1.5rem;">
+                <li>📊 نمایش نتایج تحلیل هوشمند</li>
+                <li>🏢 اطلاعات شرکت‌ها و دوره مالی</li>
+                <li>⚠️ سطح ریسک و اظهارنظر حسابرس</li>
+                <li>📥 دانلود گزارش‌های Excel</li>
+            </ul>
+            <p><strong>💡 نکته:</strong> پس از تحلیل، می‌توانید نتایج را به صورت Excel دانلود کنید.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # ایجاد Container برای محتوای دینامیک
+        main_container = st.container()
+        
+        with main_container:
+            # Process button
+            if st.session_state.get('uploaded_files') and st.session_state.uploaded_files:
+                if st.button("🚀 شروع تحلیل", type="primary", key="process_btn"):
+                    # پاک کردن نتایج قبلی
+                    st.session_state.results = None
+                    
+                    # شروع پردازش
+                    st.session_state.results = process_files(st.session_state.uploaded_files)
+                    
+                    # نمایش مجدد
+                    st.rerun()
+            else:
+                st.markdown("""
+                <div class="content-card" style="text-align: center; padding: 2rem; background: #FFF3CD; border-right: 4px solid #FFC107;">
+                    <h4 style="color: #856404; margin: 0;">⚠️ ابتدا فایل‌های خود را بارگذاری کنید</h4>
+                    <p style="color: #856404; margin: 0.5rem 0 0 0;">لطفاً به تب "بارگذاری فایل" بروید و فایل‌های PDF را انتخاب کنید.</p>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        # نمایش نتایج
+        if st.session_state.get('results'):
+            create_results_section(st.session_state.results)
+        
     
             
 
             
     if __name__ == "__main__":
         main()
+
 
 
 
