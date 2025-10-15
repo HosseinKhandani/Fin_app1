@@ -621,7 +621,7 @@ if st.session_state.get('authentication_status') == True:
         
         /* Progress Bar */
         .progress-container {
-            background: #F8F9FA;
+            background: #aaa1ed;
             border-radius: 10px;
             padding: 1.5rem;
             margin: 1rem 0;
@@ -1809,6 +1809,7 @@ if st.session_state.get('authentication_status') == True:
             
     if __name__ == "__main__":
         main()
+
 
 
 
