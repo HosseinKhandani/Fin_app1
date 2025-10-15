@@ -1497,7 +1497,12 @@ if st.session_state.get('authentication_status') == True:
                             key=f"download_excel_{idx}_{int(time.time())}_{year if 'year' in locals() else idx}"
                         )
 
-        # ⭐ اضافه کردن بخش جدید در اینجا
+
+        
+
+
+        
+        # ⭐ نمایش جداول خروجی در اپ
         create_summary_tables(results)
         
         st.markdown("</div>", unsafe_allow_html=True)
@@ -1505,7 +1510,7 @@ if st.session_state.get('authentication_status') == True:
 
 
 
-    #نمایش جداول خروجی در اپ
+    #تابع نمایش جداول خروجی در اپ
     def create_summary_tables(results):
         """Create aggregated summary tables with modern design"""
         st.markdown("""
@@ -1611,13 +1616,7 @@ if st.session_state.get('authentication_status') == True:
         )
         
         # 2. Risk Level Summary
-        st.markdown("""
-        <div class="content-card" style="background: white; margin-top: 2rem;">
-            <h3 style="color: #667eea; margin-bottom: 1rem; font-size: 1.3rem; font-weight: 600;">
-                ⚠️ توزیع سطح ریسک
-            </h3>
-        </div>
-        """, unsafe_allow_html=True)
+       
         
         col1, col2, col3, col4 = st.columns(4)
         
@@ -2091,6 +2090,7 @@ if st.session_state.get('authentication_status') == True:
             
     if __name__ == "__main__":
         main()
+
 
 
 
