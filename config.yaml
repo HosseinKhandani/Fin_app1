@@ -1,17 +1,16 @@
 credentials:
   usernames:
-    admin:
-      email: admin@example.com
-      name: مدیر سیستم
-      password: placeholder
-    fin.analyst:
-      email: analyst@financial.com
-      name: تحلیلگر مالی
-      password: placeholder
-    h.khandani:
-      email: h.khandani@financial.com
-      name: حمید خندانی
-      password: placeholder
+      admin:
+        password: $2b$12$KiPu50dxWHCrMpoUy4ztC.18vdb/kaEQr71hIz8v.GYhha2qunQ7e
+        # رمز عبور: elnagh
+      
+      fin.analyst:
+        password: $2b$12$ejRAnTtsyZrjpo7jrnNNo.2PDVzZ.cGxIhJRlDrpJKn4w2/bDvPyW
+        # رمز عبور: abc_fin_cba
+      
+      h.khandani:
+        password: $2b$12$61q/gw2lT5o0Ft0iY7fb6ewGpob3NiVQzbIJH/wsLUL1AL0wAthja
+        # رمز عبور: 123
 
 cookie:
   name: financial_analyzer_cookie
