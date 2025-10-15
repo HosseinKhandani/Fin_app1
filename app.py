@@ -27,9 +27,10 @@ st.set_page_config(
 )
 
 api_keys = [
+    "AIzaSyDyj1DlOLAlbKzTLFP2tz95TcIca4oV0Vg",
     "AIzaSyBeLYGH4JS-fPHYdqKgUPotV2dpGZYZ2to",
-    "AIzaSyAo5oFZqsTRkUIqJRjoefWINWpbwPHbEn8",    
-    "AIzaSyDyj1DlOLAlbKzTLFP2tz95TcIca4oV0Vg"
+    "AIzaSyAo5oFZqsTRkUIqJRjoefWINWpbwPHbEn8"    
+    
 ]
 
 # ==================== AUTHENTICATION CODE START ====================
@@ -1808,6 +1809,7 @@ if st.session_state.get('authentication_status') == True:
             
     if __name__ == "__main__":
         main()
+
 
 
 
