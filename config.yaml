@@ -2,18 +2,22 @@ credentials:
   usernames:
     admin:
       email: admin@example.com
-      name: Admin User
-      password: $2b$12$KIXQQgSHPxLDZ6TqPj.oU.qBh8GuXxLhD6VkfF5y3nF5nF5nF5nF5  # elnagh
+      name: مدیر سیستم
+      password: placeholder
     fin.analyst:
-      email: analyst@example.com
-      name: Financial Analyst
-      password: $2b$12$XYZ123...  # abc_fin_cba
+      email: analyst@financial.com
+      name: تحلیلگر مالی
+      password: placeholder
     h.khandani:
-      email: h.khandani@example.com
-      name: H. Khandani
-      password: $2b$12$ABC456...  # 123
+      email: h.khandani@financial.com
+      name: حمید خندانی
+      password: placeholder
 
 cookie:
   name: financial_analyzer_cookie
-  key: some_signature_key_12345
+  key: random_signature_key_financial_2024_secure_xyz123
   expiry_days: 30
+
+preauthorized:
+  emails:
+    - admin@example.com
