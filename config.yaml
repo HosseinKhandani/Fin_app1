@@ -1,18 +1,19 @@
 credentials:
   usernames:
     admin:
-      name: admin
-      password:  'placeholder'
+      email: admin@example.com
+      name: Admin User
+      password: $2b$12$KIXQQgSHPxLDZ6TqPj.oU.qBh8GuXxLhD6VkfF5y3nF5nF5nF5nF5  # elnagh
     fin.analyst:
-      name: Financial Statement Analyst
-      password:  'placeholder' 
+      email: analyst@example.com
+      name: Financial Analyst
+      password: $2b$12$XYZ123...  # abc_fin_cba
     h.khandani:
-      name: Hossein Khandani
-      password:  'placeholder'
+      email: h.khandani@example.com
+      name: H. Khandani
+      password: $2b$12$ABC456...  # 123
 
 cookie:
-  expiry_days: 1
-  key: 'random_secret_key_123'
-  name: 'financial_analyzer_cookie'
-
-
+  name: financial_analyzer_cookie
+  key: some_signature_key_12345
+  expiry_days: 30
