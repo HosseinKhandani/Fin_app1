@@ -1,4 +1,4 @@
-"مبانی_قانونی_و_استانداردها": {
+                                      "مبانی_قانونی_و_استانداردها": {
                                         "type": "array",
                                         "items": {
                                         "type": "string",
@@ -1282,3 +1282,4 @@ if st.session_state.get('authentication_status'):
                                     "عنوان_تخلف": {"type": "string"},
                                     "شرح": {"type": "string"},
                                     "مبانی_قانونی_و_است
+
