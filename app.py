@@ -168,7 +168,7 @@ if st.session_state.get('authentication_status') == True:
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             border-radius: 10px;
             padding: 0 2rem;
-            font-weight: 600;
+            font-weight: 900;
             font-size: 1.1rem;
             color: #2C3E50;
             border: 2px solid transparent;
@@ -1809,6 +1809,7 @@ if st.session_state.get('authentication_status') == True:
             
     if __name__ == "__main__":
         main()
+
 
 
 
