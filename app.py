@@ -1330,10 +1330,7 @@ if st.session_state.get('authentication_status') == True:
         if not results:
             return
         
-        st.markdown("""
-        <div class="content-card">
-            <h2 class="section-title">📊 نتایج تحلیل</h2>
-        """, unsafe_allow_html=True)
+     
         
         # Results summary with centered metrics
         successful = sum(1 for _, result in results if 'error' not in result)
@@ -1807,51 +1804,11 @@ if st.session_state.get('authentication_status') == True:
         if st.session_state.results:
             create_results_section(st.session_state.results)
             
-            # Statistics panel
-            col1, col2 = st.columns([3, 1])
-            
-            with col2:
-                st.markdown("""
-                <div class="content-card">
-                    <h3 style="color: #2C3E50; margin-bottom: 1rem; text-align: center;">📈 آمار کلی</h3>
-                """, unsafe_allow_html=True)
-                
-                total_files = len(st.session_state.results)
-                successful = sum(1 for _, result in st.session_state.results if 'error' not in result)
-                success_rate = (successful / total_files) * 100 if total_files > 0 else 0
-                
-                st.markdown(f"""
-                <div class="metric-card" style="margin-bottom: 1rem;">
-                    <div class="metric-title">کل فایل‌ها</div>
-                    <div class="metric-value">{total_files}</div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                st.markdown(f"""
-                <div class="metric-card" style="margin-bottom: 1rem; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
-                    <div class="metric-title">تحلیل موفق</div>
-                    <div class="metric-value">{successful}</div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                st.markdown(f"""
-                <div class="metric-card" style="margin-bottom: 1rem;">
-                    <div class="metric-title">درصد موفقیت</div>
-                    <div class="metric-value">{success_rate:.1f}%</div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                st.markdown("</div>", unsafe_allow_html=True)
-        elif not st.session_state.processing:
-            st.markdown("""
-            <div class="content-card" style="text-align: center; padding: 3rem;">
-                <h3 style="color: #7F8C8D; margin-bottom: 1rem;">📭 هنوز فایلی تحلیل نشده است</h3>
-                <p style="color: #95A5A6;">لطفاً فایل‌های خود را بارگذاری کرده و دکمه "شروع تحلیل" را بزنید.</p>
-            </div>
-            """, unsafe_allow_html=True)
+
             
     if __name__ == "__main__":
         main()
+
 
 
 
