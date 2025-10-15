@@ -1651,189 +1651,204 @@ if st.session_state.get('authentication_status') == True:
 
 
     def main():
-        """Main application function"""
-        # Initialize session state
-        if 'results' not in st.session_state:
-            st.session_state.results = None
-        if 'show_files' not in st.session_state:
-            st.session_state.show_files = False
-        if 'show_results' not in st.session_state:
-            st.session_state.show_results = True
-        if 'processing' not in st.session_state:
-            st.session_state.processing = False
+    """Main application function"""
+    # Initialize session state
+    if 'results' not in st.session_state:
+        st.session_state.results = None
+    if 'show_files' not in st.session_state:
+        st.session_state.show_files = False
+    if 'show_results' not in st.session_state:
+        st.session_state.show_results = True
+    if 'processing' not in st.session_state:
+        st.session_state.processing = False
+    if 'uploaded_files' not in st.session_state:
+        st.session_state.uploaded_files = None
+    
+    # Create header
+    create_header()
+    
+    # Create Tabs
+    tab1, tab2 = st.tabs(["📁 بارگذاری فایل", "📊 تحلیل و گزارش"])
+    
+    with tab1:
+        # Guide box for upload tab
+        st.markdown("""
+        <div class="content-card" style="background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); color: #2C3E50;">
+            <h3 style="color: #2C3E50; margin-bottom: 1rem;">📋 راهنمای بارگذاری فایل</h3>
+            <p><strong>✨ مراحل کار:</strong></p>
+            <ul style="padding-right: 1.5rem;">
+                <li>📄 فایل‌های PDF گزارش حسابرسی را انتخاب کنید</li>
+                <li>📦 یا یک فایل ZIP حاوی چندین PDF بارگذاری کنید</li>
+                <li>✅ پس از انتخاب، فایل‌ها را بررسی کنید</li>
+                <li>🚀 به تب "تحلیل و گزارش" بروید و دکمه "شروع تحلیل" را بزنید</li>
+            </ul>
+            <p><strong>⚠️ نکات مهم:</strong></p>
+            <ul style="padding-right: 1.5rem;">
+                <li>فرمت پشتیبانی شده: PDF</li>
+                <li>حداکثر حجم هر فایل: 50 مگابایت</li>
+                <li>کیفیت تصاویر اسکن شده مهم است</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # Create header
-        create_header()
+        # File upload section
+        uploaded_files = create_file_upload_section()
         
-        # Create Tabs
-        tab1, tab2 = st.tabs(["📁 بارگذاری فایل", "📊 تحلیل و گزارش"])
+        # Store uploaded files in session state
+        if uploaded_files:
+            st.session_state.uploaded_files = uploaded_files
         
-        with tab1:
-            # Guide box for upload tab
+        # Show upload statistics
+        if uploaded_files:
             st.markdown("""
-            <div class="content-card" style="background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); color: #2C3E50;">
-                <h3 style="color: #2C3E50; margin-bottom: 1rem;">📋 راهنمای بارگذاری فایل</h3>
-                <p><strong>✨ مراحل کار:</strong></p>
-                <ul style="padding-right: 1.5rem;">
-                    <li>📄 فایل‌های PDF گزارش حسابرسی را انتخاب کنید</li>
-                    <li>📦 یا یک فایل ZIP حاوی چندین PDF بارگذاری کنید</li>
-                    <li>✅ پس از انتخاب، فایل‌ها را بررسی کنید</li>
-                    <li>🚀 دکمه "شروع تحلیل" را بزنید</li>
-                </ul>
-                <p><strong>⚠️ نکات مهم:</strong></p>
-                <ul style="padding-right: 1.5rem;">
-                    <li>فرمت پشتیبانی شده: PDF</li>
-                    <li>حداکثر حجم هر فایل: 50 مگابایت</li>
-                    <li>کیفیت تصاویر اسکن شده مهم است</li>
-                </ul>
-            </div>
+            <div class="content-card">
+                <h2 class="section-title">📊 آمار بارگذاری</h2>
             """, unsafe_allow_html=True)
             
-            # File upload section
-            uploaded_files = create_file_upload_section()
+            col1, col2, col3 = st.columns(3)
             
-            # Show upload statistics
-            if uploaded_files:
+            with col1:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-title">تعداد فایل‌ها</div>
+                    <div class="metric-value">{len(uploaded_files)}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                if uploaded_files and isinstance(uploaded_files[0], dict):
+                    total_size = sum(len(f['content']) for f in uploaded_files)
+                else:
+                    total_size = sum(f.size for f in uploaded_files)
+                
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-title">حجم کل</div>
+                    <div class="metric-value">{total_size / (1024*1024):.1f} MB</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col3:
+                st.markdown(f"""
+                <div class="metric-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                    <div class="metric-title">وضعیت</div>
+                    <div class="metric-value">✅ آماده</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            # File list
+            if st.button("📋 مشاهده لیست فایل‌ها", key="toggle_files"):
+                st.session_state.show_files = not st.session_state.get('show_files', False)
+            
+            if st.session_state.get('show_files', False):
+                st.markdown('<div class="content-card">', unsafe_allow_html=True)
+                for i, file in enumerate(uploaded_files):
+                    if isinstance(file, dict):
+                        filename = file['name']
+                        file_size = len(file['content']) / 1024
+                    else:
+                        filename = file.name
+                        file_size = file.size / 1024
+                    
+                    st.markdown(f"""
+                    <div class="file-item">
+                        <span class="file-name">{i+1}. {filename}</span>
+                        <span class="file-size">{file_size:.1f} KB</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+    
+    with tab2:
+        # Guide box for analysis tab
+        st.markdown("""
+        <div class="content-card" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: #2C3E50;">
+            <h3 style="color: #2C3E50; margin-bottom: 1rem;">📊 راهنمای تحلیل و گزارش</h3>
+            <p><strong>📈 این بخش شامل:</strong></p>
+            <ul style="padding-right: 1.5rem;">
+                <li>📊 نمایش نتایج تحلیل هوشمند</li>
+                <li>🏢 اطلاعات شرکت‌ها و دوره مالی</li>
+                <li>⚠️ سطح ریسک و اظهارنظر حسابرس</li>
+                <li>📥 دانلود گزارش‌های Excel</li>
+            </ul>
+            <p><strong>💡 نکته:</strong> پس از تحلیل، می‌توانید نتایج را به صورت Excel دانلود کنید.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Process button - moved here
+        if st.session_state.uploaded_files:
+            if st.button("🚀 شروع تحلیل", type="primary", key="process_btn"):
+                st.session_state.processing = True
+                st.session_state.results = process_files(st.session_state.uploaded_files)
+                st.session_state.processing = False
+                st.rerun()
+        else:
+            st.markdown("""
+            <div class="content-card" style="text-align: center; padding: 2rem; background: #FFF3CD; border-right: 4px solid #FFC107;">
+                <h4 style="color: #856404; margin: 0;">⚠️ ابتدا فایل‌های خود را بارگذاری کنید</h4>
+                <p style="color: #856404; margin: 0.5rem 0 0 0;">لطفاً به تب "بارگذاری فایل" بروید و فایل‌های PDF را انتخاب کنید.</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Show processing status
+        if st.session_state.processing:
+            st.markdown("""
+            <div class="processing-status">
+                <div class="hourglass-icon">⏳</div>
+                <div class="processing-text">در حال پردازش فایل‌ها...</div>
+                <div class="processing-subtext">لطفاً صبر کنید، این فرآیند ممکن است چند دقیقه طول بکشد</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Show results
+        if st.session_state.results:
+            create_results_section(st.session_state.results)
+            
+            # Statistics panel
+            col1, col2 = st.columns([3, 1])
+            
+            with col2:
                 st.markdown("""
                 <div class="content-card">
-                    <h2 class="section-title">📊 آمار بارگذاری</h2>
+                    <h3 style="color: #2C3E50; margin-bottom: 1rem; text-align: center;">📈 آمار کلی</h3>
                 """, unsafe_allow_html=True)
                 
-                col1, col2, col3 = st.columns(3)
+                total_files = len(st.session_state.results)
+                successful = sum(1 for _, result in st.session_state.results if 'error' not in result)
+                success_rate = (successful / total_files) * 100 if total_files > 0 else 0
                 
-                with col1:
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-title">تعداد فایل‌ها</div>
-                        <div class="metric-value">{len(uploaded_files)}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                st.markdown(f"""
+                <div class="metric-card" style="margin-bottom: 1rem;">
+                    <div class="metric-title">کل فایل‌ها</div>
+                    <div class="metric-value">{total_files}</div>
+                </div>
+                """, unsafe_allow_html=True)
                 
-                with col2:
-                    if uploaded_files and isinstance(uploaded_files[0], dict):
-                        total_size = sum(len(f['content']) for f in uploaded_files)
-                    else:
-                        total_size = sum(f.size for f in uploaded_files)
-                    
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-title">حجم کل</div>
-                        <div class="metric-value">{total_size / (1024*1024):.1f} MB</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                st.markdown(f"""
+                <div class="metric-card" style="margin-bottom: 1rem; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                    <div class="metric-title">تحلیل موفق</div>
+                    <div class="metric-value">{successful}</div>
+                </div>
+                """, unsafe_allow_html=True)
                 
-                with col3:
-                    st.markdown(f"""
-                    <div class="metric-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
-                        <div class="metric-title">وضعیت</div>
-                        <div class="metric-value">✅ آماده</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                st.markdown(f"""
+                <div class="metric-card" style="margin-bottom: 1rem;">
+                    <div class="metric-title">درصد موفقیت</div>
+                    <div class="metric-value">{success_rate:.1f}%</div>
+                </div>
+                """, unsafe_allow_html=True)
                 
                 st.markdown("</div>", unsafe_allow_html=True)
-                
-                # File list
-                if st.button("📋 مشاهده لیست فایل‌ها", key="toggle_files"):
-                    st.session_state.show_files = not st.session_state.get('show_files', False)
-                
-                if st.session_state.get('show_files', False):
-                    st.markdown('<div class="content-card">', unsafe_allow_html=True)
-                    for i, file in enumerate(uploaded_files):
-                        if isinstance(file, dict):
-                            filename = file['name']
-                            file_size = len(file['content']) / 1024
-                        else:
-                            filename = file.name
-                            file_size = file.size / 1024
-                        
-                        st.markdown(f"""
-                        <div class="file-item">
-                            <span class="file-name">{i+1}. {filename}</span>
-                            <span class="file-size">{file_size:.1f} KB</span>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    st.markdown('</div>', unsafe_allow_html=True)
-                
-                # Process button
-                if st.button("🚀 شروع تحلیل", type="primary", key="process_btn"):
-                    st.session_state.processing = True
-                    st.session_state.results = process_files(uploaded_files)
-                    st.session_state.processing = False
-                    st.rerun()
-        
-        with tab2:
-            # Guide box for analysis tab
+        elif not st.session_state.processing:
             st.markdown("""
-            <div class="content-card" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: #2C3E50;">
-                <h3 style="color: #2C3E50; margin-bottom: 1rem;">📊 راهنمای تحلیل و گزارش</h3>
-                <p><strong>📈 این بخش شامل:</strong></p>
-                <ul style="padding-right: 1.5rem;">
-                    <li>📊 نمایش نتایج تحلیل هوشمند</li>
-                    <li>🏢 اطلاعات شرکت‌ها و دوره مالی</li>
-                    <li>⚠️ سطح ریسک و اظهارنظر حسابرس</li>
-                    <li>📥 دانلود گزارش‌های Excel</li>
-                </ul>
-                <p><strong>💡 نکته:</strong> پس از تحلیل، می‌توانید نتایج را به صورت Excel دانلود کنید.</p>
+            <div class="content-card" style="text-align: center; padding: 3rem;">
+                <h3 style="color: #7F8C8D; margin-bottom: 1rem;">📭 هنوز فایلی تحلیل نشده است</h3>
+                <p style="color: #95A5A6;">لطفاً فایل‌های خود را بارگذاری کرده و دکمه "شروع تحلیل" را بزنید.</p>
             </div>
             """, unsafe_allow_html=True)
             
-            # Show processing status
-            if st.session_state.processing:
-                st.markdown("""
-                <div class="processing-status">
-                    <div class="hourglass-icon">⏳</div>
-                    <div class="processing-text">در حال پردازش فایل‌ها...</div>
-                    <div class="processing-subtext">لطفاً صبر کنید، این فرآیند ممکن است چند دقیقه طول بکشد</div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            # Show results
-            if st.session_state.results:
-                create_results_section(st.session_state.results)
-                
-                # Statistics panel
-                col1, col2 = st.columns([3, 1])
-                
-                with col2:
-                    st.markdown("""
-                    <div class="content-card">
-                        <h3 style="color: #2C3E50; margin-bottom: 1rem; text-align: center;">📈 آمار کلی</h3>
-                    """, unsafe_allow_html=True)
-                    
-                    total_files = len(st.session_state.results)
-                    successful = sum(1 for _, result in st.session_state.results if 'error' not in result)
-                    success_rate = (successful / total_files) * 100 if total_files > 0 else 0
-                    
-                    st.markdown(f"""
-                    <div class="metric-card" style="margin-bottom: 1rem;">
-                        <div class="metric-title">کل فایل‌ها</div>
-                        <div class="metric-value">{total_files}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    st.markdown(f"""
-                    <div class="metric-card" style="margin-bottom: 1rem; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
-                        <div class="metric-title">تحلیل موفق</div>
-                        <div class="metric-value">{successful}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    st.markdown(f"""
-                    <div class="metric-card" style="margin-bottom: 1rem;">
-                        <div class="metric-title">درصد موفقیت</div>
-                        <div class="metric-value">{success_rate:.1f}%</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    st.markdown("</div>", unsafe_allow_html=True)
-            else:
-                st.markdown("""
-                <div class="content-card" style="text-align: center; padding: 3rem;">
-                    <h3 style="color: #7F8C8D; margin-bottom: 1rem;">📭 هنوز فایلی تحلیل نشده است</h3>
-                    <p style="color: #95A5A6;">لطفاً ابتدا از بخش "بارگذاری فایل" فایل‌های خود را انتخاب و تحلیل کنید.</p>
-                </div>
-                """, unsafe_allow_html=True)
-
     if __name__ == "__main__":
         main()
+
 
