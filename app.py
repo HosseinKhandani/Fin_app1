@@ -1653,18 +1653,18 @@ if st.session_state.get('authentication_status') == True:
 
 
     def main():
-    """Main application function"""
-    # Initialize session state
-    if 'results' not in st.session_state:
-        st.session_state.results = None
-    if 'show_files' not in st.session_state:
-        st.session_state.show_files = False
-    if 'show_results' not in st.session_state:
-        st.session_state.show_results = True
-    if 'processing' not in st.session_state:
-        st.session_state.processing = False
-    if 'uploaded_files' not in st.session_state:
-        st.session_state.uploaded_files = None
+        """Main application function"""
+        # Initialize session state
+        if 'results' not in st.session_state:
+            st.session_state.results = None
+        if 'show_files' not in st.session_state:
+            st.session_state.show_files = False
+        if 'show_results' not in st.session_state:
+            st.session_state.show_results = True
+        if 'processing' not in st.session_state:
+            st.session_state.processing = False
+        if 'uploaded_files' not in st.session_state:
+            st.session_state.uploaded_files = None
     
     # Create header
     create_header()
@@ -1852,6 +1852,7 @@ if st.session_state.get('authentication_status') == True:
             
     if __name__ == "__main__":
         main()
+
 
 
 
