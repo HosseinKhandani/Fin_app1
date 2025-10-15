@@ -1330,8 +1330,7 @@ if st.session_state.get('authentication_status') == True:
         """Create clean results section with risk-colored cards and centered metrics"""
         if not results:
             return
-        
-     
+            
         
         # Results summary with centered metrics
         successful = sum(1 for _, result in results if 'error' not in result)
@@ -1497,9 +1496,292 @@ if st.session_state.get('authentication_status') == True:
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                             key=f"download_excel_{idx}_{int(time.time())}_{year if 'year' in locals() else idx}"
                         )
+
+        # ⭐ اضافه کردن بخش جدید در اینجا
+        create_summary_tables(results)
         
         st.markdown("</div>", unsafe_allow_html=True)
+    
 
+
+
+    #نمایش جداول خروجی در اپ
+    def create_summary_tables(results):
+        """Create aggregated summary tables with modern design"""
+        st.markdown("""
+        <div class="content-card" style="margin-top: 3rem; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
+            <h2 class="section-title">📈 خلاصه آماری و تحلیل تجمیعی</h2>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Prepare data
+        summary_data = []
+        risk_counts = {'پایین': 0, 'متوسط': 0, 'بالا': 0, 'بحرانی': 0}
+        opinion_counts = {'مقبول': 0, 'مشروط': 0, 'مردود': 0, 'عدم اظهارنظر': 0}
+        
+        for filename, result in results:
+            if 'error' not in result:
+                try:
+                    analysis = result['تحلیل_جامع_گزارش_حسابرسی']['بخش۱_خلاصه_و_اطلاعات_کلیدی']
+                    
+                    company_name = analysis['نام_شرکت']
+                    auditor_name = analysis['نام_حسابرس']
+                    financial_year = analysis['دوره_مالی']
+                    opinion_type = analysis['نوع_اظهارنظر']
+                    risk_level = analysis['سطح_ریسک_کلی_بنا_به_گزارش']
+                    
+                    summary_data.append({
+                        'شرکت': company_name,
+                        'حسابرس': auditor_name,
+                        'دوره_مالی': financial_year,
+                        'اظهارنظر': opinion_type,
+                        'سطح_ریسک': risk_level
+                    })
+                    
+                    # Count risk levels
+                    if risk_level in risk_counts:
+                        risk_counts[risk_level] += 1
+                    
+                    # Count opinion types
+                    if opinion_type in opinion_counts:
+                        opinion_counts[opinion_type] += 1
+                        
+                except Exception as e:
+                    continue
+        
+        if not summary_data:
+            st.warning("داده‌ای برای نمایش خلاصه وجود ندارد")
+            return
+        
+        # 1. Company Summary Table
+        st.markdown("""
+        <div class="content-card" style="background: white; margin-top: 1.5rem;">
+            <h3 style="color: #667eea; margin-bottom: 1rem; font-size: 1.3rem; font-weight: 600;">
+                🏢 جدول خلاصه شرکت‌ها
+            </h3>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        df_summary = pd.DataFrame(summary_data)
+        
+        # Style the dataframe
+        st.markdown("""
+        <style>
+            .dataframe-container {
+                direction: rtl;
+                text-align: right;
+            }
+            .dataframe {
+                width: 100%;
+                border-collapse: collapse;
+                background: white;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                border-radius: 10px;
+                overflow: hidden;
+            }
+            .dataframe thead tr {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                text-align: center;
+            }
+            .dataframe th {
+                padding: 15px;
+                font-weight: 600;
+                font-size: 1rem;
+            }
+            .dataframe td {
+                padding: 12px;
+                text-align: center;
+                border-bottom: 1px solid #f0f0f0;
+            }
+            .dataframe tbody tr:hover {
+                background-color: #f8f9ff;
+                transition: all 0.3s ease;
+            }
+            .dataframe tbody tr:nth-child(even) {
+                background-color: #fafbff;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        st.dataframe(
+            df_summary,
+            use_container_width=True,
+            hide_index=True
+        )
+        
+        # 2. Risk Level Summary
+        st.markdown("""
+        <div class="content-card" style="background: white; margin-top: 2rem;">
+            <h3 style="color: #667eea; margin-bottom: 1rem; font-size: 1.3rem; font-weight: 600;">
+                ⚠️ توزیع سطح ریسک
+            </h3>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        risk_colors = {
+            'پایین': '#11998e',
+            'متوسط': '#F39C12',
+            'بالا': '#E67E22',
+            'بحرانی': '#E74C3C'
+        }
+        
+        risk_icons = {
+            'پایین': '🟢',
+            'متوسط': '🟡',
+            'بالا': '🟠',
+            'بحرانی': '🔴'
+        }
+        
+        with col1:
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); 
+                        padding: 1.5rem; border-radius: 12px; text-align: center; color: white;
+                        box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">{risk_icons['پایین']}</div>
+                <div style="font-size: 2rem; font-weight: 700; margin-bottom: 0.3rem;">{risk_counts['پایین']}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">ریسک پایین</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%); 
+                        padding: 1.5rem; border-radius: 12px; text-align: center; color: white;
+                        box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">{risk_icons['متوسط']}</div>
+                <div style="font-size: 2rem; font-weight: 700; margin-bottom: 0.3rem;">{risk_counts['متوسط']}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">ریسک متوسط</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #E67E22 0%, #D35400 100%); 
+                        padding: 1.5rem; border-radius: 12px; text-align: center; color: white;
+                        box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3);">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">{risk_icons['بالا']}</div>
+                <div style="font-size: 2rem; font-weight: 700; margin-bottom: 0.3rem;">{risk_counts['بالا']}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">ریسک بالا</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col4:
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%); 
+                        padding: 1.5rem; border-radius: 12px; text-align: center; color: white;
+                        box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">{risk_icons['بحرانی']}</div>
+                <div style="font-size: 2rem; font-weight: 700; margin-bottom: 0.3rem;">{risk_counts['بحرانی']}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">ریسک بحرانی</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # 3. Opinion Type Summary
+        st.markdown("""
+        <div class="content-card" style="background: white; margin-top: 2rem;">
+            <h3 style="color: #667eea; margin-bottom: 1rem; font-size: 1.3rem; font-weight: 600;">
+                📋 توزیع نوع اظهارنظر
+            </h3>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        opinion_colors = {
+            'مقبول': '#11998e',
+            'مشروط': '#F39C12',
+            'مردود': '#E74C3C',
+            'عدم اظهارنظر': '#95A5A6'
+        }
+        
+        opinion_icons = {
+            'مقبول': '✅',
+            'مشروط': '⚠️',
+            'مردود': '❌',
+            'عدم اظهارنظر': '⭕'
+        }
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); 
+                        padding: 1.5rem; border-radius: 12px; text-align: center; color: white;
+                        box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">{opinion_icons['مقبول']}</div>
+                <div style="font-size: 2rem; font-weight: 700; margin-bottom: 0.3rem;">{opinion_counts['مقبول']}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">مقبول</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%); 
+                        padding: 1.5rem; border-radius: 12px; text-align: center; color: white;
+                        box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">{opinion_icons['مشروط']}</div>
+                <div style="font-size: 2rem; font-weight: 700; margin-bottom: 0.3rem;">{opinion_counts['مشروط']}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">مشروط</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%); 
+                        padding: 1.5rem; border-radius: 12px; text-align: center; color: white;
+                        box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">{opinion_icons['مردود']}</div>
+                <div style="font-size: 2rem; font-weight: 700; margin-bottom: 0.3rem;">{opinion_counts['مردود']}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">مردود</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col4:
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #95A5A6 0%, #7F8C8D 100%); 
+                        padding: 1.5rem; border-radius: 12px; text-align: center; color: white;
+                        box-shadow: 0 4px 15px rgba(149, 165, 166, 0.3);">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">{opinion_icons['عدم اظهارنظر']}</div>
+                <div style="font-size: 2rem; font-weight: 700; margin-bottom: 0.3rem;">{opinion_counts['عدم اظهارنظر']}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">عدم اظهارنظر</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # 4. Detailed Risk-Opinion Matrix
+        st.markdown("""
+        <div class="content-card" style="background: white; margin-top: 2rem;">
+            <h3 style="color: #667eea; margin-bottom: 1rem; font-size: 1.3rem; font-weight: 600;">
+                📊 ماتریس ریسک و اظهارنظر
+            </h3>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Create matrix data
+        matrix_data = []
+        for item in summary_data:
+            matrix_data.append({
+                'شرکت': item['شرکت'],
+                'سطح_ریسک': item['سطح_ریسک'],
+                'اظهارنظر': item['اظهارنظر']
+            })
+        
+        df_matrix = pd.DataFrame(matrix_data)
+        
+        # Group by risk and opinion
+        grouped = df_matrix.groupby(['سطح_ریسک', 'اظهارنظر']).size().reset_index(name='تعداد')
+        
+        st.dataframe(
+            grouped,
+            use_container_width=True,
+            hide_index=True
+        )
+
+
+
+
+
+    
     def flatten_reference_data(df):
         """
         تابع برای تبدیل ستون ارجاع به ستون‌های جداگانه
@@ -1809,6 +2091,7 @@ if st.session_state.get('authentication_status') == True:
             
     if __name__ == "__main__":
         main()
+
 
 
 
