@@ -343,7 +343,7 @@ if st.session_state.get('authentication_status') == True:
         
         /* Logout button in sidebar */
         .stSidebar .stButton > button {
-            background: linear-gradient(#63d5b4) !important;
+            background: linear-gradient(#8895eb) !important;
             color: black !important;
             border: none !important;
             border-radius: 8px !important;
@@ -2063,6 +2063,7 @@ if st.session_state.get('authentication_status') == True:
             
     if __name__ == "__main__":
         main()
+
 
 
 
