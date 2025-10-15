@@ -1651,7 +1651,7 @@ if st.session_state.get('authentication_status') == True:
 
     def main():
         """Main application function"""
-        # Initialize session state
+        # Initialize session state - مقداردهی اولیه متغیرهای سشن
         if 'results' not in st.session_state:
             st.session_state.results = None
         if 'show_files' not in st.session_state:
@@ -1808,6 +1808,7 @@ if st.session_state.get('authentication_status') == True:
             
     if __name__ == "__main__":
         main()
+
 
 
 
