@@ -610,11 +610,12 @@
                             use_container_width=True
                         )
                     
+                    successful_results = [r for r in results if 'error' not in r[1]]
                     st.markdown(f"""
                     <div class="alert-box alert-success">
                         <div class="alert-title">✅ آماده دانلود</div>
                         <div class="alert-content">
-                            <p><strong>فایل اکسل شامل تحلیل کامل {len([r for r in results if 'error' not in r[1]])} گزارش:</strong></p>
+                            <p><strong>فایل اکسل شامل تحلیل کامل {len(successful_results)} گزارش:</strong></p>
                             <ul>
                                 <li>📊 <strong>بخش 1:</strong> خلاصه و اطلاعات کلیدی</li>
                                 <li>📋 <strong>بخش 2:</strong> تجزیه تحلیل گزارش (اظهارنظر، مبانی، تاکید، الزامات قانونی)</li>
@@ -1282,5 +1283,3 @@ if st.session_state.get('authentication_status'):
                                     "عنوان_تخلف": {"type": "string"},
                                     "شرح": {"type": "string"},
                                     "مبانی_قانونی_و_است
-
-
