@@ -483,7 +483,7 @@ if st.session_state.get('authentication_status') == True:
         
         /* User-friendly Upload Area - Reduced height and no border */
         .upload-area {
-            background: #F8FBFF;
+            background: rgb(165 252 195);
             border-radius: 12px;
             padding: 1rem 1.5rem;
             text-align: center;
@@ -1809,6 +1809,7 @@ if st.session_state.get('authentication_status') == True:
             
     if __name__ == "__main__":
         main()
+
 
 
 
