@@ -51,22 +51,44 @@ if 'authentication_status' not in st.session_state:
 
 # Show login form if not authenticated
 if st.session_state.authentication_status is None:
-    name, authentication_status, username = authenticator.login(location='main')
-    st.session_state.authentication_status = authentication_status
-    st.session_state.name = name
-    st.session_state.username = username
+    try:
+        # Try new API (streamlit-authenticator >= 0.3.0)
+        authenticator.login()
+        
+        # Get values from session state (new version stores them there)
+        if 'authentication_status' in st.session_state:
+            authentication_status = st.session_state['authentication_status']
+            name = st.session_state.get('name', None)
+            username = st.session_state.get('username', None)
+        else:
+            authentication_status = None
+            name = None
+            username = None
+            
+    except TypeError:
+        # Fallback to old API (streamlit-authenticator < 0.3.0)
+        result = authenticator.login(location='main')
+        if result is not None:
+            name, authentication_status, username = result
+            st.session_state.authentication_status = authentication_status
+            st.session_state.name = name
+            st.session_state.username = username
+        else:
+            authentication_status = None
+            name = None
+            username = None
 
 # Handle authentication results
-if st.session_state.authentication_status == False:
-    st.error('Username/password is incorrect')
+if st.session_state.get('authentication_status') == False:
+    st.error('نام کاربری یا رمز عبور اشتباه است')
     st.stop()
 
-if st.session_state.authentication_status == None:
-    st.warning('Please enter your username and password')
+if st.session_state.get('authentication_status') is None:
+    st.warning('لطفاً نام کاربری و رمز عبور خود را وارد کنید')
     st.stop()
 
 # If authenticated, show the main app
-if st.session_state.authentication_status:
+if st.session_state.get('authentication_status') == True:
     
     # ==================== CUSTOM SIDEBAR WITH ONLY GUIDE BOX AND LOGOUT ====================
     
@@ -95,7 +117,12 @@ if st.session_state.authentication_status:
         st.markdown("<br>", unsafe_allow_html=True)
         
         # Logout button at the end
-        authenticator.logout('🚪 خروج از سیستم', 'sidebar')
+        try:
+            # Try new API
+            authenticator.logout(button_name='🚪 خروج از سیستم', location='sidebar')
+        except TypeError:
+            # Fallback to old API
+            authenticator.logout('🚪 خروج از سیستم', 'sidebar')
     
     # ==================== AUTHENTICATION CODE END ====================
     
