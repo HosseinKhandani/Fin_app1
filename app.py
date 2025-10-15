@@ -2013,29 +2013,37 @@ if st.session_state.get('authentication_status') == True:
                     </div>
                     """, unsafe_allow_html=True)
                 st.markdown('</div>', unsafe_allow_html=True)
-    
+
     with tab2:
-        # Guide box for analysis tab
-        st.markdown("""
-        <div class="content-card" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: #2C3E50;">
-            <h3 style="color: #2C3E50; margin-bottom: 1rem;">📊 راهنمای تحلیل و گزارش</h3>
-            <p><strong>📈 این بخش شامل:</strong></p>
-            <ul style="padding-right: 1.5rem;">
-                <li>📊 نمایش نتایج تحلیل هوشمند</li>
-                <li>🏢 اطلاعات شرکت‌ها و دوره مالی</li>
-                <li>⚠️ سطح ریسک و اظهارنظر حسابرس</li>
-                <li>📥 دانلود گزارش‌های Excel</li>
-            </ul>
-            <p><strong>💡 نکته:</strong> پس از تحلیل، می‌توانید نتایج را به صورت Excel دانلود کنید.</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Process button - بررسی امن وجود فایل‌های بارگذاری شده
+    # Guide box for analysis tab
+    st.markdown("""
+    <div class="content-card" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: #2C3E50;">
+        <h3 style="color: #2C3E50; margin-bottom: 1rem;">📊 راهنمای تحلیل و گزارش</h3>
+        <p><strong>📈 این بخش شامل:</strong></p>
+        <ul style="padding-right: 1.5rem;">
+            <li>📊 نمایش نتایج تحلیل هوشمند</li>
+            <li>🏢 اطلاعات شرکت‌ها و دوره مالی</li>
+            <li>⚠️ سطح ریسک و اظهارنظر حسابرس</li>
+            <li>📥 دانلود گزارش‌های Excel</li>
+        </ul>
+        <p><strong>💡 نکته:</strong> پس از تحلیل، می‌توانید نتایج را به صورت Excel دانلود کنید.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # ایجاد Container برای محتوای دینامیک
+    main_container = st.container()
+    
+    with main_container:
+        # Process button
         if st.session_state.get('uploaded_files') and st.session_state.uploaded_files:
             if st.button("🚀 شروع تحلیل", type="primary", key="process_btn"):
-                st.session_state.processing = True
+                # پاک کردن نتایج قبلی
+                st.session_state.results = None
+                
+                # شروع پردازش
                 st.session_state.results = process_files(st.session_state.uploaded_files)
-                st.session_state.processing = False
+                
+                # نمایش مجدد
                 st.rerun()
         else:
             st.markdown("""
@@ -2044,25 +2052,18 @@ if st.session_state.get('authentication_status') == True:
                 <p style="color: #856404; margin: 0.5rem 0 0 0;">لطفاً به تب "بارگذاری فایل" بروید و فایل‌های PDF را انتخاب کنید.</p>
             </div>
             """, unsafe_allow_html=True)
-        
-        # Show processing status
-        if st.session_state.processing:
-            st.markdown("""
-            <div class="processing-status">
-                <div class="hourglass-icon">⏳</div>
-                <div class="processing-text">در حال پردازش فایل‌ها...</div>
-                <div class="processing-subtext">لطفاً صبر کنید، این فرآیند ممکن است چند دقیقه طول بکشد</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Show results
-        if st.session_state.results:
-            create_results_section(st.session_state.results)
+    
+    # نمایش نتایج
+    if st.session_state.get('results'):
+        create_results_section(st.session_state.results)
+    
+    
             
 
             
     if __name__ == "__main__":
         main()
+
 
 
 
