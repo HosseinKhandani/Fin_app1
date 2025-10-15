@@ -1446,6 +1446,8 @@ if st.session_state.get('authentication_status') == True:
                         </div>
                         """, unsafe_allow_html=True)
         
+
+        
         # Convert to Excel
         if st.button("📊 تبدیل به Excel", type="secondary", key="excel_btn"):
             excel_files = convert_to_excel(results)
@@ -1850,5 +1852,6 @@ if st.session_state.get('authentication_status') == True:
             
     if __name__ == "__main__":
         main()
+
 
 
