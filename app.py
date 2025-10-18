@@ -637,7 +637,7 @@ if st.session_state.get('authentication_status') == True:
             border-radius: 12px;
             padding: 1rem 2.5rem;
             font-weight: 600;
-            font-size: 1.1rem;
+            font-size: 1.3rem;
             transition: all 0.3s ease;
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
             width: 100%;
@@ -2063,6 +2063,7 @@ if st.session_state.get('authentication_status') == True:
             
     if __name__ == "__main__":
         main()
+
 
 
 
