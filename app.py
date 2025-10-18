@@ -1257,7 +1257,7 @@ if st.session_state.get('authentication_status') == True:
         # Create progress tracking
         st.markdown("""
         <div class="progress-container">
-            <h3 style="color: #2C3E50; margin-bottom: 1rem;"> (زمان تقریبی حدود یک دقیقه به ازای هر فایل)در حال پردازش...</h3>
+            <h4 style="color: #2C3E50; margin-bottom: 1rem;"> در حال پردازش (زمان تقریبی حدود یک دقیقه به ازای هر فایل) ...</h3>
         </div>
         """, unsafe_allow_html=True)
         
@@ -2063,6 +2063,7 @@ if st.session_state.get('authentication_status') == True:
             
     if __name__ == "__main__":
         main()
+
 
 
 
